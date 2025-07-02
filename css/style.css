@@ -1,4 +1,4 @@
-      body {
+body {
             background-color: #f8f9fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
@@ -200,3 +200,29 @@
             border-radius: 5px;
             font-size: 0.9rem;
         }
+        .wordsearch-header {
+            background-image: url('../img/joshua-hoehne-3Jp6akQ8xqo-unsplash.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+            color: white !important;
+        }
+
+.wordsearch-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(52, 144, 220, 0.6);
+    z-index: 1;
+}
+
+.wordsearch-header i,
+.wordsearch-header::after {
+    position: relative;
+    z-index: 3;
+    color: white !important;
+}
