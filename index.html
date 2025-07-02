@@ -358,6 +358,13 @@
 
         <!-- Quiz Container -->
         <div id="quiz-container" class="quiz-container" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="mb-0" id="quiz-title"><i class="fas fa-question-circle"></i> Quiz de Geodésia</h3>
+                <button id="quiz-back" class="btn btn-geodesic-outline">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </button>
+            </div>
+            
             <div class="progress-container">
                 <div class="d-flex justify-content-between mb-2">
                     <span id="question-counter">Pergunta 1 de 10</span>
@@ -727,6 +734,8 @@
         const startWordsearchBtn = document.getElementById('start-wordsearch');
         const wordsearchContainer = document.getElementById('wordsearch-container');
         const wordsearchBackBtn = document.getElementById('wordsearch-back');
+        const quizBackBtn = document.getElementById('quiz-back');
+        const quizTitle = document.getElementById('quiz-title');
         const wordsearchTopicSelect = document.getElementById('wordsearch-topic');
         const wordsearchWordsDiv = document.getElementById('wordsearch-words');
         const wordsearchBoard = document.getElementById('wordsearch-board');
@@ -761,6 +770,12 @@
         // Back button from word search
         wordsearchBackBtn.addEventListener('click', function() {
             wordsearchContainer.style.display = 'none';
+            gameSelection.style.display = 'flex';
+        });
+
+        // Back button from quiz
+        quizBackBtn.addEventListener('click', function() {
+            quizContainer.style.display = 'none';
             gameSelection.style.display = 'flex';
         });
 
@@ -847,6 +862,9 @@
             wordsearchContainer.style.display = 'none';
             resultContainer.style.display = 'none';
             
+            // Update quiz title
+            quizTitle.innerHTML = `<i class="fas fa-question-circle"></i> ${quizzes[quizType].title}`;
+            
             updateQuestionCounter();
             updateScore();
             loadQuestion();
@@ -874,6 +892,10 @@
             feedbackDiv.className = 'feedback';
             feedbackDiv.innerHTML = '';
             
+            // Update counters and progress
+            updateQuestionCounter();
+            updateScore();
+            
             // Update button states
             prevBtn.disabled = currentQuestion === 0;
             nextBtn.textContent = currentQuestion === quizData.length - 1 ? 'Finalizar' : 'Próxima';
@@ -896,6 +918,9 @@
             
             // Store user's answer
             userAnswers[currentQuestion] = index;
+            
+            // Update score immediately after selection
+            updateScore();
             
             // Show feedback immediately
             showFeedback();
@@ -947,7 +972,6 @@
                 return;
             }
             
-            // Update score if moving forward to a new question
             if (currentQuestion === quizData.length - 1) {
                 finishQuiz();
             } else {
@@ -1006,7 +1030,9 @@
         // Update score counter
         function updateScore() {
             let currentScore = 0;
-            for (let i = 0; i <= currentQuestion; i++) {
+            // Count all correct answers up to current question or all questions if quiz is complete
+            const maxIndex = Math.min(currentQuestion + 1, quizData.length);
+            for (let i = 0; i < maxIndex; i++) {
                 if (userAnswers[i] !== undefined && userAnswers[i] === quizData[i].answer) {
                     currentScore++;
                 }
