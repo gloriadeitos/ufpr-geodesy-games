@@ -164,6 +164,7 @@
             background-color: #ddd;
             border: 2px solid #2a5298;
             touch-action: none; /* Para melhorar o arrastar em dispositivos móveis */
+            max-width: 450px; /* Limita a largura máxima */
         }
         .wordsearch-cell {
             aspect-ratio: 1;
@@ -174,6 +175,8 @@
             font-weight: bold;
             cursor: pointer;
             user-select: none;
+            font-size: 0.8rem; /* Reduz o tamanho da fonte */
+            min-height: 25px; /* Define altura mínima menor */
         }
         .wordsearch-cell.selected {
             background-color: #d1e7ff;
