@@ -14,12 +14,50 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         .geodesic-header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(rgba(2, 24, 66, 0.8), rgba(42, 82, 152, 0.1)), url('./img/jeremy-thomas-E0AHdsENmDg-unsplash.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             color: white;
             padding: 2rem 0;
             margin-bottom: 2rem;
             border-radius: 0 0 10px 10px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .spline-container {
+            position: absolute;
+            right: -80px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        .spline-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 50%;
+        }
+        /* Responsividade para o iframe */
+        @media (max-width: 768px) {
+            .spline-container {
+                right: -50px;
+                width: 200px;
+                height: 200px;
+            }
+        }
+        @media (max-width: 576px) {
+            .spline-container {
+                right: -30px;
+                width: 150px;
+                height: 150px;
+            }
         }
         .game-card {
             transition: transform 0.3s, box-shadow 0.3s;
@@ -227,6 +265,10 @@
         <div class="container text-center">
             <h1><i class="fas fa-globe-americas"></i> Passatempo Geodésico</h1>
             <p class="lead">Teste seus conhecimentos em Geodésia e Sistemas de Referência</p>
+        </div>
+        <!-- Spline 3D Globe -->
+        <div class="spline-container">
+            <iframe src='https://my.spline.design/planetcopy-WnV0GePmv5oHa3s8upC8aGke/' frameborder='0' width='100%' height='100%'></iframe>
         </div>
     </header>
 
@@ -1118,7 +1160,7 @@
                 const isCorrect = userAnswer === question.answer;
                 
                 // Mostrar resposta do usuário com cor baseada se está correta ou não
-                doc.setTextColor(isCorrect ? 0 : 200, isCorrect ? 150 : 0, 0);
+                doc.setTextColor(isCorrect ? 0 : 200, isCorrect ? 150 : 0);
                 const status = isCorrect ? 'CORRETO' : 'INCORRETO';
                 const cleanUserAnswer = 'Sua resposta: ' + cleanTextForPdf(question.options[userAnswer]) + ' - ' + status;
                 const userAnswerLines = doc.splitTextToSize(cleanUserAnswer, 165);
