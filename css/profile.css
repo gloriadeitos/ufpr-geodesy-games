@@ -1,0 +1,110 @@
+/* User Button */
+.user-btn {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.4);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+    padding: 5px;
+}
+
+.user-btn:hover {
+    transform: scale(1.1);
+    color: rgba(255,255,255,0.9);
+}
+
+/* Profile Card */
+.profile-card {
+    position: fixed;
+    top: 60px;
+    left: 10px;
+    width: 90%;
+    max-width: 280px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    padding: 15px;
+    color: #333;
+    z-index: 1000;
+    display: none;
+    margin: 0 auto;
+    right: 10px;
+}
+
+.profile-pic {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #4a6fa5;
+    margin: 0 auto 10px;
+    display: block;
+}
+
+.profile-card h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.profile-title {
+    margin: 5px 0 10px;
+    color: #666;
+    font-size: 0.8rem;
+    text-align: center;
+    line-height: 1.4;
+}
+
+.profile-social {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.profile-social a {
+    color: inherit;
+    font-size: 1.3rem;
+    transition: transform 0.3s ease;
+}
+
+.profile-social a:hover {
+    transform: scale(1.2);
+}
+
+.profile-social .fa-linkedin { color: #0077b5; }
+.profile-social .fa-instagram { color: #e1306c; }
+.profile-social .fa-github { color: #333; }
+
+/* Responsividade */
+@media (min-width: 576px) {
+    .profile-card {
+        left: 20px;
+        right: auto;
+        width: 250px;
+    }
+    
+    .profile-pic {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .profile-card h3 {
+        font-size: 1.2rem;
+    }
+    
+    .profile-title {
+        font-size: 0.9rem;
+    }
+    
+    .user-btn {
+        font-size: 1.8rem;
+        top: 20px;
+        left: 20px;
+    }
+}
