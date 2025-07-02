@@ -184,6 +184,12 @@
         .wordsearch-cell.found {
             background-color: #d1fae5;
         }
+        .wordsearch-cell.user-found {
+            background-color: #d1fae5; /* Verde para palavras encontradas pelo usuário */
+        }
+        .wordsearch-cell.revealed {
+            background-color: #dbeafe; /* Azul para palavras reveladas */
+        }
         #wordsearch-words {
             display: flex;
             flex-wrap: wrap;
@@ -195,8 +201,12 @@
             background-color: #f1f3f5;
             border-radius: 5px;
         }
-        .wordsearch-word.found {
-            background-color: #d1fae5;
+        .wordsearch-word.user-found {
+            background-color: #d1fae5; /* Verde para palavras encontradas pelo usuário */
+            text-decoration: line-through;
+        }
+        .wordsearch-word.revealed {
+            background-color: #dbeafe; /* Azul para palavras reveladas */
             text-decoration: line-through;
         }
         .wordsearch-topic-selector {
@@ -1078,7 +1088,7 @@
                 const userAnswer = userAnswers[index];
                 const isCorrect = userAnswer === question.answer;
                 
-                doc.setTextColor(isCorrect ? 0 : 200, isCorrect ? 150 : 0, 0);
+                doc.setTextColor(isCorrect ? 0 : 200, isCorrect ? 150 : 0);
                 const cleanUserAnswer = 'Sua resposta: ' + question.options[userAnswer];
                 const userAnswerLines = doc.splitTextToSize(cleanUserAnswer, 165);
                 doc.text(userAnswerLines, 25, yPos);
@@ -1595,7 +1605,7 @@
             
             doc.setFontSize(10);
             wordSearchGame.userFoundWords.forEach(word => {
-                doc.text('✓ ' + word, 25, yPos);
+                doc.text('- ' + word, 25, yPos);
                 yPos += 6;
             });
             
@@ -1610,7 +1620,7 @@
                 
                 doc.setFontSize(10);
                 revealedWords.forEach(word => {
-                    doc.text('◦ ' + word, 25, yPos);
+                    doc.text('- ' + word, 25, yPos);
                     yPos += 6;
                 });
             }
@@ -1654,10 +1664,19 @@
                             placedWord.positions.some(pos => pos.row === i && pos.col === j)
                         );
                         
+                        // Check if this cell is part of a user-found word
+                        const isUserFound = wordSearchGame.placedWords.some(placedWord => 
+                            wordSearchGame.userFoundWords.includes(placedWord.word) &&
+                            placedWord.positions.some(pos => pos.row === i && pos.col === j)
+                        );
+                        
                         // Draw cell border
                         doc.setDrawColor(150, 150, 150);
-                        if (isPartOfSolution) {
-                            doc.setFillColor(200, 250, 200); // Light green for solution cells
+                        if (isUserFound) {
+                            doc.setFillColor(200, 250, 200); // Verde claro para palavras encontradas pelo usuário
+                            doc.rect(x, y, cellSize, cellSize, 'FD');
+                        } else if (isPartOfSolution) {
+                            doc.setFillColor(200, 230, 250); // Azul claro para palavras reveladas
                             doc.rect(x, y, cellSize, cellSize, 'FD');
                         } else {
                             doc.rect(x, y, cellSize, cellSize);
@@ -1972,21 +1991,22 @@
                     // Update UI
                     document.querySelectorAll('.wordsearch-word').forEach(wordDiv => {
                         if (wordDiv.dataset.word === foundWord) {
-                            wordDiv.classList.add('found');
+                            wordDiv.classList.add('user-found'); // Usar classe específica para usuário
                         }
                     });
                     
-                    // Highlight cells
+                    // Highlight cells with user-found class
                     this.selectedCells.forEach(cell => {
                         const cellElement = document.querySelector(`.wordsearch-cell[data-row="${cell.row}"][data-col="${cell.col}"]`);
                         cellElement.classList.remove('selected');
-                        cellElement.classList.add('found');
+                        cellElement.classList.add('user-found'); // Usar classe específica para usuário
                     });
                     
                     // Check if all words are found
                     if (this.foundWords.length === this.words.length) {
                         setTimeout(() => {
                             alert('Parabéns! Você encontrou todas as palavras!');
+                            showWordsearchResult();
                         }, 300);
                     }
                 }
@@ -1999,23 +2019,23 @@
                 this.words.forEach(word => {
                     if (!this.foundWords.includes(word)) {
                         this.foundWords.push(word);
-                        // Note: NOT adding to userFoundWords since these were revealed
+                        // Note: NOT adding to userFoundWords since these foram reveladas
                         
-                        // Find and highlight the word in the grid
+                        // Find and highlight the word in the grid with revealed class
                         const placedWord = this.placedWords.find(pw => pw.word === word);
                         if (placedWord) {
                             placedWord.positions.forEach(pos => {
                                 const cellElement = document.querySelector(`.wordsearch-cell[data-row="${pos.row}"][data-col="${pos.col}"]`);
                                 if (cellElement) {
-                                    cellElement.classList.add('found');
+                                    cellElement.classList.add('revealed'); // Usar classe específica para reveladas
                                 }
                             });
                         }
                         
-                        // Update word list UI
+                        // Update word list UI with revealed class
                         document.querySelectorAll('.wordsearch-word').forEach(wordDiv => {
                             if (wordDiv.dataset.word === word) {
-                                wordDiv.classList.add('found');
+                                wordDiv.classList.add('revealed'); // Usar classe específica para reveladas
                             }
                         });
                     }
@@ -2030,7 +2050,7 @@
             resetSelection() {
                 this.selectedCells.forEach(cell => {
                     const cellElement = document.querySelector(`.wordsearch-cell[data-row="${cell.row}"][data-col="${cell.col}"]`);
-                    if (cellElement && !cellElement.classList.contains('found')) {
+                    if (cellElement && !cellElement.classList.contains('user-found') && !cellElement.classList.contains('revealed')) {
                         cellElement.classList.remove('selected');
                     }
                 });
