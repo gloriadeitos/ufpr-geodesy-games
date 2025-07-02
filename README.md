@@ -1,4 +1,16 @@
+#### Glória Maria Deitos Gomes da Silva <br> 01.Julho.2025
+
 # 🎯 UFPR Geodesy Games
+
+<p align="center">
+  <img src="https://github.com/gloriadeitos/gloriadeitos/blob/main/img/ufpr.png" alt="ufpr" height="100">
+  <img src="https://github.com/gloriadeitos/gloriadeitos/blob/main/img/eng-carto-2.png" alt="eng-carto-2" height="100">
+  <img src="https://github.com/gloriadeitos/gloriadeitos/blob/main/img/gloriadeitos-logo.png" alt="gloriadeitos-logo" height="100">
+</p>
+
+**Disciplina:** Sistemas de Referência e Tempo
+**Curso:** Engenharia Cartográfica e de Agrimensura  
+**Instituição:** Universidade Federal do Paraná (UFPR) - Brasil  
 
 Este repositório faz parte da iniciativa de **Gamificação do Ensino**, com o objetivo de criar atividades lúdicas que auxiliem no aprendizado e na revisão dos conteúdos da área de Geodésia.
 
