@@ -27,6 +27,7 @@
             border-radius: 10px;
             overflow: hidden;
             border: none;
+            height: 100%;
         }
         .game-card:hover {
             transform: translateY(-5px);
@@ -38,6 +39,13 @@
             font-weight: bold;
         }
         .quiz-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .wordsearch-container {
             background-color: white;
             border-radius: 10px;
             padding: 2rem;
@@ -147,6 +155,57 @@
             border-radius: 10px;
             margin-top: 2rem;
         }
+        /* Word Search Styles */
+        #wordsearch-board {
+            display: grid;
+            grid-template-columns: repeat(15, 1fr);
+            gap: 1px;
+            margin: 20px auto;
+            background-color: #ddd;
+            border: 2px solid #2a5298;
+            touch-action: none; /* Para melhorar o arrastar em dispositivos móveis */
+        }
+        .wordsearch-cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+        }
+        .wordsearch-cell.selected {
+            background-color: #d1e7ff;
+        }
+        .wordsearch-cell.found {
+            background-color: #d1fae5;
+        }
+        #wordsearch-words {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .wordsearch-word {
+            padding: 5px 10px;
+            background-color: #f1f3f5;
+            border-radius: 5px;
+        }
+        .wordsearch-word.found {
+            background-color: #d1fae5;
+            text-decoration: line-through;
+        }
+        .wordsearch-topic-selector {
+            margin-bottom: 20px;
+        }
+        .wordsearch-instructions {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -165,40 +224,98 @@
                 <h2 class="text-center mb-4">Escolha seu desafio</h2>
             </div>
             
-            <div class="col-md-4">
+            <div class="col-md-3 mb-4">
+                <div class="game-card card h-100">
+                    <div class="card-header">
+                        <i class="fas fa-search"></i> Caça-Palavras
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Encontre termos geodésicos escondidos em uma grade de letras.</p>
+                        <button class="btn btn-geodesic w-100" id="start-wordsearch">Iniciar Jogo</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
                 <div class="game-card card h-100">
                     <div class="card-header">
                         <i class="fas fa-crosshairs"></i> Conceitos Básicos
                     </div>
                     <div class="card-body">
-                        <p class="card-text">Teste seus conhecimentos sobre os fundamentos da Geodésia, sistemas de medida e conceitos gerais.</p>
+                        <p class="card-text">Teste seus conhecimentos sobre os fundamentos da Geodésia.</p>
                         <button class="btn btn-geodesic w-100 start-quiz" data-quiz="basic">Iniciar Quiz</button>
                     </div>
                 </div>
             </div>
             
-            <div class="col-md-4">
+            <div class="col-md-3 mb-4">
                 <div class="game-card card h-100">
                     <div class="card-header">
                         <i class="fas fa-vector-square"></i> Sistemas Cartesianos
                     </div>
                     <div class="card-body">
-                        <p class="card-text">Desafie-se com questões sobre sistemas 2D e 3D, transformações e coordenadas.</p>
+                        <p class="card-text">Desafie-se com questões sobre sistemas 2D e 3D.</p>
                         <button class="btn btn-geodesic w-100 start-quiz" data-quiz="cartesian">Iniciar Quiz</button>
                     </div>
                 </div>
             </div>
             
-            <div class="col-md-4">
+            <div class="col-md-3 mb-4">
                 <div class="game-card card h-100">
                     <div class="card-header">
                         <i class="fas fa-globe"></i> Terra Esférica
                     </div>
                     <div class="card-body">
-                        <p class="card-text">Questões sobre trigonometria esférica, ortodrômica, loxodrômica e posicionamento.</p>
+                        <p class="card-text">Questões sobre trigonometria esférica e posicionamento.</p>
                         <button class="btn btn-geodesic w-100 start-quiz" data-quiz="spherical">Iniciar Quiz</button>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Word Search Container -->
+        <div id="wordsearch-container" class="wordsearch-container" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="mb-0"><i class="fas fa-search"></i> Caça-Palavras Geodésico</h3>
+                <div>
+                    <button id="wordsearch-download" class="btn btn-geodesic-outline me-2">
+                        <i class="fas fa-download"></i> Baixar
+                    </button>
+                    <button id="wordsearch-back" class="btn btn-geodesic-outline">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </button>
+                </div>
+            </div>
+            
+            <div class="wordsearch-topic-selector">
+                <label for="wordsearch-topic" class="form-label">Selecione o tema:</label>
+                <select id="wordsearch-topic" class="form-select">
+                    <option value="">Escolha um tema...</option>
+                    <option value="basic">Conceitos Básicos</option>
+                    <option value="cartesian">Sistemas Cartesianos</option>
+                    <option value="spherical">Terra Esférica</option>
+                    <option value="all">Todos os Temas</option>
+                </select>
+            </div>
+            
+            <div class="wordsearch-instructions">
+                <i class="fas fa-info-circle"></i> Clique e arraste para selecionar as palavras. Elas podem estar na horizontal, vertical ou diagonal.
+            </div>
+            
+            <div id="wordsearch-placeholder" class="text-center py-5" style="background-color: #f8f9fa; border-radius: 10px; border: 2px dashed #dee2e6;">
+                <i class="fas fa-arrow-up text-muted" style="font-size: 2rem;"></i>
+                <p class="text-muted mt-3 mb-0">Selecione um tema acima para começar o caça-palavras</p>
+            </div>
+            
+            <div id="wordsearch-content" style="display: none;">
+                <div id="wordsearch-words"></div>
+                <div id="wordsearch-board"></div>
+            </div>
+            
+            <div class="d-flex justify-content-between mt-4">
+                <button id="wordsearch-reset" class="btn btn-geodesic-outline" disabled>
+                    <i class="fas fa-redo"></i> Reiniciar
+                </button>
             </div>
         </div>
 
@@ -247,6 +364,9 @@
                 <button id="download-pdf-btn" class="btn btn-geodesic-outline">
                     <i class="fas fa-file-pdf"></i> Baixar PDF
                 </button>
+                <button id="download-questions-pdf-btn" class="btn btn-geodesic-outline">
+                    <i class="fas fa-file-alt"></i> Somente Perguntas
+                </button>
                 <button id="back-to-menu-btn" class="btn btn-geodesic-outline">
                     <i class="fas fa-home"></i> Menu Principal
                 </button>
@@ -285,7 +405,7 @@
                         <i class="fas fa-download"></i>
                     </div>
                     <h4>Material para Download</h4>
-                    <p>Baixe um PDF com as respostas e explicações para estudo posterior.</p>
+                    <p>Baixe PDFs com perguntas, respostas ou apenas as perguntas para estudo offline.</p>
                 </div>
             </div>
         </div>
@@ -295,12 +415,17 @@
             <div class="row align-items-center">
                 <div class="col-md-8">
                     <h3><i class="fas fa-file-pdf"></i> Baixe o material completo</h3>
-                    <p>Quer estudar offline? Baixe um PDF com todas as perguntas, respostas e explicações detalhadas.</p>
+                    <p>Quer estudar offline? Baixe PDFs com todas as perguntas, com ou sem respostas, e o caça-palavras.</p>
                 </div>
                 <div class="col-md-4 text-md-end">
-                    <button id="download-full-pdf" class="btn btn-geodesic btn-lg">
-                        <i class="fas fa-download"></i> Baixar PDF Completo
-                    </button>
+                    <div class="btn-group">
+                        <button id="download-full-pdf" class="btn btn-geodesic">
+                            <i class="fas fa-download"></i> PDF Completo
+                        </button>
+                        <button id="download-questions-only" class="btn btn-geodesic-outline">
+                            <i class="fas fa-file-alt"></i> Somente Perguntas
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -318,6 +443,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- jsPDF for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- jsPDF AutoTable for tables in PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script>
         // Initialize jsPDF
         const { jsPDF } = window.jspdf;
@@ -506,12 +633,37 @@
             }
         };
 
+        // Word search data
+        const wordSearchData = {
+            basic: {
+                title: "Conceitos Básicos",
+                words: ["METRO", "GEODESIA", "NORTE", "AZIMUTE", "DISTANCIA", "ANGULO", "SISTEMA", "COORDENADA", "ALTURA", "PLANIMETRIA"],
+                description: "Termos básicos de Geodésia e Topografia"
+            },
+            cartesian: {
+                title: "Sistemas Cartesianos",
+                words: ["DEXTROGIRO", "LEVOGIRO", "TRANSFORMACAO", "ROTACAO", "TRANSLACAO", "ESCALA", "HELMERT", "BURSAWOLF", "MATRIZ", "VETOR"],
+                description: "Termos sobre sistemas de coordenadas e transformações"
+            },
+            spherical: {
+                title: "Terra Esférica",
+                words: ["ESFERA", "MERIDIANO", "PARALELO", "EQUADOR", "LOXODROMICA", "ORTODROMICA", "LATITUDE", "LONGITUDE", "RAIO", "ERATOSTENES"],
+                description: "Termos sobre o modelo esférico da Terra"
+            },
+            all: {
+                title: "Todos os Temas",
+                words: ["GEODESIA", "METRO", "NORTE", "AZIMUTE", "DEXTROGIRO", "ROTACAO", "ESFERA", "MERIDIANO", "LATITUDE", "LONGITUDE"],
+                description: "Termos mistos de todos os temas"
+            }
+        };
+
         // Game state variables
         let currentQuiz = null;
         let currentQuestion = 0;
         let score = 0;
         let userAnswers = [];
         let quizData = [];
+        let wordSearchGame = null;
 
         // DOM elements
         const gameSelection = document.getElementById('game-selection');
@@ -532,7 +684,17 @@
         const restartBtn = document.getElementById('restart-btn');
         const downloadPdfBtn = document.getElementById('download-pdf-btn');
         const backToMenuBtn = document.getElementById('back-to-menu-btn');
+        const downloadQuestionsPdfBtn = document.getElementById('download-questions-pdf-btn');
         const downloadFullPdf = document.getElementById('download-full-pdf');
+        const downloadQuestionsOnly = document.getElementById('download-questions-only');
+        const startWordsearchBtn = document.getElementById('start-wordsearch');
+        const wordsearchContainer = document.getElementById('wordsearch-container');
+        const wordsearchBackBtn = document.getElementById('wordsearch-back');
+        const wordsearchTopicSelect = document.getElementById('wordsearch-topic');
+        const wordsearchWordsDiv = document.getElementById('wordsearch-words');
+        const wordsearchBoard = document.getElementById('wordsearch-board');
+        const wordsearchResetBtn = document.getElementById('wordsearch-reset');
+        const wordsearchDownloadBtn = document.getElementById('wordsearch-download');
 
         // Start quiz buttons
         document.querySelectorAll('.start-quiz').forEach(button => {
@@ -540,6 +702,64 @@
                 currentQuiz = this.getAttribute('data-quiz');
                 startQuiz(currentQuiz);
             });
+        });
+
+        // Start word search game
+        startWordsearchBtn.addEventListener('click', function() {
+            gameSelection.style.display = 'none';
+            quizContainer.style.display = 'none';
+            resultContainer.style.display = 'none';
+            wordsearchContainer.style.display = 'block';
+            
+            // Reset topic selector and show placeholder
+            wordsearchTopicSelect.value = '';
+            document.getElementById('wordsearch-placeholder').style.display = 'block';
+            document.getElementById('wordsearch-content').style.display = 'none';
+            wordsearchResetBtn.disabled = true;
+            wordsearchDownloadBtn.disabled = true;
+        });
+
+        // Back button from word search
+        wordsearchBackBtn.addEventListener('click', function() {
+            wordsearchContainer.style.display = 'none';
+            gameSelection.style.display = 'flex';
+        });
+
+        // Word search topic change
+        wordsearchTopicSelect.addEventListener('change', function() {
+            const selectedTopic = this.value;
+            
+            if (selectedTopic === '') {
+                // Show placeholder if no topic selected
+                document.getElementById('wordsearch-placeholder').style.display = 'block';
+                document.getElementById('wordsearch-content').style.display = 'none';
+                wordsearchResetBtn.disabled = true;
+                wordsearchDownloadBtn.disabled = true;
+            } else {
+                // Hide placeholder and show game
+                document.getElementById('wordsearch-placeholder').style.display = 'none';
+                document.getElementById('wordsearch-content').style.display = 'block';
+                wordsearchResetBtn.disabled = false;
+                wordsearchDownloadBtn.disabled = false;
+                
+                // Initialize game with selected topic
+                initWordSearch(selectedTopic);
+            }
+        });
+
+        // Word search reset button
+        wordsearchResetBtn.addEventListener('click', function() {
+            if (wordSearchGame && wordsearchTopicSelect.value) {
+                wordSearchGame.resetSelection();
+                initWordSearch(wordsearchTopicSelect.value);
+            }
+        });
+
+        // Word search download button
+        wordsearchDownloadBtn.addEventListener('click', function() {
+            if (wordsearchTopicSelect.value) {
+                generateWordSearchPdf(wordsearchTopicSelect.value, false);
+            }
         });
 
         // Start a new quiz
@@ -551,6 +771,7 @@
             
             gameSelection.style.display = 'none';
             quizContainer.style.display = 'block';
+            wordsearchContainer.style.display = 'none';
             resultContainer.style.display = 'none';
             
             updateQuestionCounter();
@@ -727,157 +948,798 @@
 
         // Back to menu button
         backToMenuBtn.addEventListener('click', () => {
-            gameSelection.style.display = 'block';
+            gameSelection.style.display = 'flex';
             quizContainer.style.display = 'none';
             resultContainer.style.display = 'none';
+            wordsearchContainer.style.display = 'none';
         });
 
-        // Download PDF with answers
+        // Download PDF buttons
         downloadPdfBtn.addEventListener('click', generateResultsPdf);
+        downloadQuestionsPdfBtn.addEventListener('click', generateQuestionsOnlyPdf);
         downloadFullPdf.addEventListener('click', generateFullContentPdf);
+        downloadQuestionsOnly.addEventListener('click', generateAllQuestionsOnlyPdf);
 
         // Generate PDF with quiz results
         function generateResultsPdf() {
             const doc = new jsPDF();
             
+            // Adiciona suporte a caracteres especiais
+            doc.setFont('helvetica', 'normal');
+            
             // Title
-            doc.setFontSize(20);
-            doc.text(`Resultados do Passatempo Geodésico`, 105, 20, { align: 'center' });
-            doc.setFontSize(16);
-            doc.text(`${quizzes[currentQuiz].title}`, 105, 30, { align: 'center' });
+            doc.setFontSize(18);
+            doc.setTextColor(42, 82, 152);
+            doc.text('Resultados do Quiz Geodésico', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(14);
+            doc.setTextColor(0, 0, 0);
+            doc.text(quizzes[currentQuiz].title, 105, 30, { align: 'center' });
             
             // Score
-            doc.setFontSize(14);
-            doc.text(`Pontuação: ${score} de ${quizData.length}`, 105, 40, { align: 'center' });
+            doc.setFontSize(12);
+            doc.text('Pontuação: ' + score + ' de ' + quizData.length, 105, 40, { align: 'center' });
             
             // Date
             const today = new Date();
-            doc.text(`Data: ${today.toLocaleDateString()}`, 105, 50, { align: 'center' });
+            doc.text('Data: ' + today.toLocaleDateString('pt-BR'), 105, 50, { align: 'center' });
             
             // Add line
+            doc.setDrawColor(42, 82, 152);
+            doc.setLineWidth(0.5);
             doc.line(20, 55, 190, 55);
             
             // Questions and answers
             let yPos = 65;
-            doc.setFontSize(12);
             
             quizData.forEach((question, index) => {
-                // Question
-                doc.setFont('helvetica', 'bold');
-                doc.text(`${index + 1}. ${question.question}`, 20, yPos);
-                yPos += 10;
-                
-                // User's answer
-                doc.setFont('helvetica', 'normal');
-                const userAnswer = userAnswers[index];
-                const isCorrect = userAnswer === question.answer;
-                
-                doc.setTextColor(isCorrect ? '#0d6e0d' : '#d63333');
-                doc.text(`Sua resposta: ${question.options[userAnswer]}`, 25, yPos);
-                doc.setTextColor('#000000');
-                yPos += 7;
-                
-                // Correct answer if wrong
-                if (!isCorrect) {
-                    doc.text(`Resposta correta: ${question.options[question.answer]}`, 25, yPos);
-                    yPos += 7;
-                }
-                
-                // Explanation
-                doc.text(`Explicação: ${question.explanation}`, 25, yPos);
-                yPos += 15;
-                
-                // Add small space between questions
-                yPos += 5;
-                
-                // Add new page if needed
-                if (yPos > 270) {
+                // Check if we need a new page
+                if (yPos > 250) {
                     doc.addPage();
                     yPos = 20;
                 }
+                
+                // Question
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(0, 0, 0);
+                
+                const cleanQuestion = (index + 1) + '. ' + question.question;
+                const questionLines = doc.splitTextToSize(cleanQuestion, 170);
+                doc.text(questionLines, 20, yPos);
+                yPos += questionLines.length * 6 + 5;
+                
+                // User's answer
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                const userAnswer = userAnswers[index];
+                const isCorrect = userAnswer === question.answer;
+                
+                doc.setTextColor(isCorrect ? 0 : 200, isCorrect ? 150 : 0, 0);
+                const cleanUserAnswer = 'Sua resposta: ' + question.options[userAnswer];
+                const userAnswerLines = doc.splitTextToSize(cleanUserAnswer, 165);
+                doc.text(userAnswerLines, 25, yPos);
+                yPos += userAnswerLines.length * 5 + 3;
+                
+                // Correct answer if wrong
+                if (!isCorrect) {
+                    doc.setTextColor(0, 150, 0);
+                    const cleanCorrectAnswer = 'Resposta correta: ' + question.options[question.answer];
+                    const correctAnswerLines = doc.splitTextToSize(cleanCorrectAnswer, 165);
+                    doc.text(correctAnswerLines, 25, yPos);
+                    yPos += correctAnswerLines.length * 5 + 3;
+                }
+                
+                // Explanation
+                doc.setTextColor(60, 60, 60);
+                const cleanExplanation = 'Explicação: ' + question.explanation;
+                const explanationLines = doc.splitTextToSize(cleanExplanation, 165);
+                doc.text(explanationLines, 25, yPos);
+                yPos += explanationLines.length * 5 + 10;
             });
             
             // Save the PDF
-            doc.save(`Resultados_Geodesia_${currentQuiz}.pdf`);
+            doc.save('Resultados_Geodesia_' + currentQuiz + '.pdf');
+        }
+
+        // Generate PDF with questions only
+        function generateQuestionsOnlyPdf() {
+            const doc = new jsPDF();
+            
+            // Adiciona suporte a caracteres especiais
+            doc.setFont('helvetica', 'normal');
+            
+            // Title
+            doc.setFontSize(18);
+            doc.setTextColor(42, 82, 152);
+            doc.text('Perguntas do Quiz Geodésico', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(14);
+            doc.setTextColor(0, 0, 0);
+            doc.text(quizzes[currentQuiz].title, 105, 30, { align: 'center' });
+            
+            // Date
+            const today = new Date();
+            doc.setFontSize(10);
+            doc.text('Data: ' + today.toLocaleDateString('pt-BR'), 105, 40, { align: 'center' });
+            
+            // Add line
+            doc.setDrawColor(42, 82, 152);
+            doc.setLineWidth(0.5);
+            doc.line(20, 45, 190, 45);
+            
+            // Questions
+            let yPos = 55;
+            
+            quizData.forEach((question, index) => {
+                // Check if we need a new page
+                if (yPos > 230) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                
+                // Question
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(0, 0, 0);
+                
+                const cleanQuestion = (index + 1) + '. ' + question.question;
+                const questionLines = doc.splitTextToSize(cleanQuestion, 170);
+                doc.text(questionLines, 20, yPos);
+                yPos += questionLines.length * 6 + 5;
+                
+                // Options
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                question.options.forEach((option, optIndex) => {
+                    const letter = String.fromCharCode(97 + optIndex); // a, b, c, d
+                    const cleanOption = letter + ') ' + option;
+                    const optionLines = doc.splitTextToSize(cleanOption, 160);
+                    doc.text(optionLines, 25, yPos);
+                    yPos += optionLines.length * 5 + 2;
+                });
+                
+                // Space for answer
+                yPos += 5;
+                doc.setTextColor(100, 100, 100);
+                doc.text('Resposta: _____', 25, yPos);
+                doc.setTextColor(0, 0, 0);
+                yPos += 15;
+            });
+            
+            // Save the PDF
+            doc.save('Perguntas_Geodesia_' + currentQuiz + '.pdf');
         }
 
         // Generate PDF with full content
         function generateFullContentPdf() {
             const doc = new jsPDF();
             
+            // Adiciona suporte a caracteres especiais
+            doc.setFont('helvetica', 'normal');
+            
             // Title
-            doc.setFontSize(20);
-            doc.text(`Material Completo de Geodésia`, 105, 20, { align: 'center' });
-            doc.setFontSize(14);
-            doc.text(`Baseado nos conteúdos da UFPR`, 105, 30, { align: 'center' });
+            doc.setFontSize(18);
+            doc.setTextColor(42, 82, 152);
+            doc.text('Material Completo de Geodésia', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            doc.text('Baseado nos conteúdos da UFPR', 105, 30, { align: 'center' });
             
             // Date
             const today = new Date();
-            doc.text(`Data: ${today.toLocaleDateString()}`, 105, 40, { align: 'center' });
+            doc.setFontSize(10);
+            doc.text('Data: ' + today.toLocaleDateString('pt-BR'), 105, 40, { align: 'center' });
             
             // Add line
+            doc.setDrawColor(42, 82, 152);
+            doc.setLineWidth(0.5);
             doc.line(20, 45, 190, 45);
             
             // Introduction
             let yPos = 55;
-            doc.setFontSize(12);
-            doc.text(`Este material contém todas as perguntas e respostas dos quizzes sobre:`, 20, yPos);
-            yPos += 10;
-            doc.text(`- Conceitos Básicos de Geodésia`, 20, yPos);
-            yPos += 7;
-            doc.text(`- Sistemas Cartesianos`, 20, yPos);
-            yPos += 7;
-            doc.text(`- Terra Esférica`, 20, yPos);
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text('Este material contém todas as perguntas e respostas dos quizzes sobre:', 20, yPos);
+            yPos += 8;
+            doc.text('- Conceitos Básicos de Geodésia', 25, yPos);
+            yPos += 6;
+            doc.text('- Sistemas Cartesianos', 25, yPos);
+            yPos += 6;
+            doc.text('- Terra Esférica', 25, yPos);
             yPos += 15;
             
             // Loop through all quizzes
             Object.keys(quizzes).forEach(quizKey => {
                 const quiz = quizzes[quizKey];
                 
+                // Check if we need a new page for quiz title
+                if (yPos > 250) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                
                 // Quiz title
                 doc.setFontSize(14);
                 doc.setFont('helvetica', 'bold');
+                doc.setTextColor(42, 82, 152);
                 doc.text(quiz.title, 20, yPos);
-                yPos += 10;
+                yPos += 12;
                 
                 // Questions
-                doc.setFontSize(12);
+                doc.setFontSize(10);
                 doc.setFont('helvetica', 'normal');
+                doc.setTextColor(0, 0, 0);
                 
                 quiz.questions.forEach((question, index) => {
+                    // Check if we need a new page
+                    if (yPos > 220) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    
                     // Question
                     doc.setFont('helvetica', 'bold');
-                    doc.text(`${index + 1}. ${question.question}`, 20, yPos);
-                    yPos += 10;
+                    const cleanQuestion = (index + 1) + '. ' + question.question;
+                    const questionLines = doc.splitTextToSize(cleanQuestion, 170);
+                    doc.text(questionLines, 20, yPos);
+                    yPos += questionLines.length * 5 + 4;
                     
                     // Options
                     doc.setFont('helvetica', 'normal');
                     question.options.forEach((option, optIndex) => {
-                        const marker = optIndex === question.answer ? '✓' : '○';
-                        doc.text(`${marker} ${option}`, 25, yPos);
-                        yPos += 7;
+                        const letter = String.fromCharCode(97 + optIndex);
+                        const marker = optIndex === question.answer ? 'CORRETA' : '';
+                        const optionColor = optIndex === question.answer ? [0, 150, 0] : [0, 0, 0];
+                        
+                        doc.setTextColor(...optionColor);
+                        const cleanOption = letter + ') ' + option + ' ' + marker;
+                        const optionLines = doc.splitTextToSize(cleanOption, 160);
+                        doc.text(optionLines, 25, yPos);
+                        yPos += optionLines.length * 4 + 2;
                     });
                     
                     // Explanation
-                    doc.text(`Explicação: ${question.explanation}`, 25, yPos);
-                    yPos += 15;
-                    
-                    // Add small space between questions
-                    yPos += 5;
-                    
-                    // Add new page if needed
-                    if (yPos > 270) {
-                        doc.addPage();
-                        yPos = 20;
-                    }
+                    doc.setTextColor(60, 60, 60);
+                    const cleanExplanation = 'Explicação: ' + question.explanation;
+                    const explanationLines = doc.splitTextToSize(cleanExplanation, 165);
+                    doc.text(explanationLines, 25, yPos);
+                    yPos += explanationLines.length * 4 + 10;
                 });
                 
                 // Add space between quizzes
-                yPos += 10;
+                yPos += 8;
             });
             
             // Save the PDF
-            doc.save(`Material_Completo_Geodesia.pdf`);
+            doc.save('Material_Completo_Geodesia.pdf');
+        }
+
+        // Generate PDF with all questions only
+        function generateAllQuestionsOnlyPdf() {
+            const doc = new jsPDF();
+            
+            // Adiciona suporte a caracteres especiais
+            doc.setFont('helvetica', 'normal');
+            
+            // Title
+            doc.setFontSize(18);
+            doc.setTextColor(42, 82, 152);
+            doc.text('Perguntas de Geodésia para Estudo', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            doc.text('Prática e revisão dos conceitos', 105, 30, { align: 'center' });
+            
+            // Date
+            const today = new Date();
+            doc.setFontSize(10);
+            doc.text('Data: ' + today.toLocaleDateString('pt-BR'), 105, 40, { align: 'center' });
+            
+            // Add line
+            doc.setDrawColor(42, 82, 152);
+            doc.setLineWidth(0.5);
+            doc.line(20, 45, 190, 45);
+            
+            // Introduction
+            let yPos = 55;
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text('Este material contém todas as perguntas dos quizzes para prática:', 20, yPos);
+            yPos += 8;
+            doc.text('- Conceitos Básicos de Geodésia', 25, yPos);
+            yPos += 6;
+            doc.text('- Sistemas Cartesianos', 25, yPos);
+            yPos += 6;
+            doc.text('- Terra Esférica', 25, yPos);
+            yPos += 15;
+            
+            // Loop through all quizzes
+            Object.keys(quizzes).forEach(quizKey => {
+                const quiz = quizzes[quizKey];
+                
+                // Check if we need a new page for quiz title
+                if (yPos > 250) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                
+                // Quiz title
+                doc.setFontSize(14);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(42, 82, 152);
+                doc.text(quiz.title, 20, yPos);
+                yPos += 12;
+                
+                // Questions
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(0, 0, 0);
+                
+                quiz.questions.forEach((question, index) => {
+                    // Check if we need a new page
+                    if (yPos > 220) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    
+                    // Question
+                    doc.setFont('helvetica', 'bold');
+                    const cleanQuestion = (index + 1) + '. ' + question.question;
+                    const questionLines = doc.splitTextToSize(cleanQuestion, 170);
+                    doc.text(questionLines, 20, yPos);
+                    yPos += questionLines.length * 5 + 4;
+                    
+                    // Options
+                    doc.setFont('helvetica', 'normal');
+                    question.options.forEach((option, optIndex) => {
+                        const letter = String.fromCharCode(97 + optIndex);
+                        const cleanOption = letter + ') ' + option;
+                        const optionLines = doc.splitTextToSize(cleanOption, 160);
+                        doc.text(optionLines, 25, yPos);
+                        yPos += optionLines.length * 4 + 2;
+                    });
+                    
+                    // Space for answer
+                    yPos += 5;
+                    doc.setTextColor(100, 100, 100);
+                    doc.text('Resposta: _____', 25, yPos);
+                    doc.setTextColor(0, 0, 0);
+                    yPos += 15;
+                });
+                
+                // Add space between quizzes
+                yPos += 8;
+            });
+            
+            // Save the PDF
+            doc.save('Perguntas_Geodesia_Estudo.pdf');
+        }
+
+        // Generate Word Search PDF
+        function generateWordSearchPdf(topic, withSolutions) {
+            const data = wordSearchData[topic];
+            const doc = new jsPDF();
+            
+            // Adiciona suporte a caracteres especiais
+            doc.setFont('helvetica', 'normal');
+            
+            // Title
+            doc.setFontSize(18);
+            doc.setTextColor(42, 82, 152);
+            doc.text('Caça-Palavras Geodésico', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(14);
+            doc.setTextColor(0, 0, 0);
+            doc.text(data.title, 105, 30, { align: 'center' });
+            
+            // Date
+            const today = new Date();
+            doc.setFontSize(10);
+            doc.text('Data: ' + today.toLocaleDateString('pt-BR'), 105, 40, { align: 'center' });
+            
+            // Instructions
+            doc.setFontSize(10);
+            doc.setTextColor(60, 60, 60);
+            doc.text('Encontre as palavras na grade abaixo.', 105, 50, { align: 'center' });
+            doc.text('Elas podem estar na horizontal, vertical ou diagonal.', 105, 57, { align: 'center' });
+            
+            // Words to find
+            doc.setFontSize(11);
+            doc.setTextColor(0, 0, 0);
+            doc.text('Palavras para encontrar:', 20, 70);
+            
+            let xPos = 20;
+            let yPos = 80;
+            const wordsPerLine = 3;
+            
+            data.words.forEach((word, index) => {
+                if (index > 0 && index % wordsPerLine === 0) {
+                    xPos = 20;
+                    yPos += 8;
+                }
+                
+                doc.setTextColor(0, 0, 0);
+                const prefix = withSolutions ? 'OK ' : '- ';
+                doc.text(prefix + word, xPos, yPos);
+                xPos += 60;
+            });
+            
+            // Add line
+            yPos += 12;
+            doc.setDrawColor(42, 82, 152);
+            doc.setLineWidth(0.5);
+            doc.line(20, yPos, 190, yPos);
+            
+            // Word search grid
+            if (wordSearchGame) {
+                const cellSize = 7;
+                const startY = yPos + 10;
+                const gridWidth = wordSearchGame.cols * cellSize;
+                
+                // Center the grid
+                const centerX = (210 - gridWidth) / 2;
+                
+                doc.setFontSize(9);
+                doc.setTextColor(0, 0, 0);
+                
+                // Draw grid
+                for (let i = 0; i < wordSearchGame.rows; i++) {
+                    for (let j = 0; j < wordSearchGame.cols; j++) {
+                        const x = centerX + j * cellSize;
+                        const y = startY + i * cellSize;
+                        
+                        // Draw cell border
+                        doc.setDrawColor(150, 150, 150);
+                        doc.rect(x, y, cellSize, cellSize);
+                        
+                        // Add letter
+                        doc.text(wordSearchGame.board[i][j], x + cellSize/2, y + cellSize/2 + 2, {
+                            align: 'center'
+                        });
+                    }
+                }
+            }
+            
+            // Save the PDF
+            doc.save('CaçaPalavras_Geodesia_' + topic + '.pdf');
+        }
+
+        // Initialize word search game
+        function initWordSearch(topic) {
+            const data = wordSearchData[topic];
+            wordsearchWordsDiv.innerHTML = '';
+            
+            // Create word list
+            data.words.forEach(word => {
+                const wordDiv = document.createElement('div');
+                wordDiv.className = 'wordsearch-word';
+                wordDiv.textContent = word;
+                wordDiv.dataset.word = word;
+                wordsearchWordsDiv.appendChild(wordDiv);
+            });
+            
+            // Initialize game
+            wordSearchGame = new WordSearchGame(15, 15, data.words);
+            wordSearchGame.renderBoard(wordsearchBoard);
+        }
+
+        // Word Search Game Class
+        class WordSearchGame {
+            constructor(rows, cols, words) {
+                this.rows = rows;
+                this.cols = cols;
+                this.words = words;
+                this.board = [];
+                this.selectedCells = [];
+                this.foundWords = [];
+                this.isDragging = false;
+                this.placedWords = []; // Track where words are placed
+                
+                this.initBoard();
+                this.placeWords();
+                this.fillEmptyCells();
+            }
+            
+            initBoard() {
+                for (let i = 0; i < this.rows; i++) {
+                    this.board[i] = [];
+                    for (let j = 0; j < this.cols; j++) {
+                        this.board[i][j] = '';
+                    }
+                }
+            }
+            
+            placeWords() {
+                const directions = [
+                    { dr: 0, dc: 1 },   // Horizontal
+                    { dr: 1, dc: 0 },   // Vertical
+                    { dr: 1, dc: 1 },   // Diagonal \
+                    { dr: 1, dc: -1 }   // Diagonal /
+                ];
+                
+                this.placedWords = []; // Reset placed words tracking
+                
+                this.words.forEach(word => {
+                    let placed = false;
+                    let attempts = 0;
+                    const maxAttempts = 200; // Increase attempts
+                    
+                    while (!placed && attempts < maxAttempts) {
+                        attempts++;
+                        
+                        // Choose random direction
+                        const dir = directions[Math.floor(Math.random() * directions.length)];
+                        
+                        // Choose random starting position
+                        let r, c;
+                        
+                        if (dir.dc === 1) { // Horizontal
+                            r = Math.floor(Math.random() * this.rows);
+                            c = Math.floor(Math.random() * (this.cols - word.length + 1));
+                        } else if (dir.dr === 1 && dir.dc === 0) { // Vertical
+                            r = Math.floor(Math.random() * (this.rows - word.length + 1));
+                            c = Math.floor(Math.random() * this.cols);
+                        } else if (dir.dr === 1 && dir.dc === 1) { // Diagonal \
+                            r = Math.floor(Math.random() * (this.rows - word.length + 1));
+                            c = Math.floor(Math.random() * (this.cols - word.length + 1));
+                        } else { // Diagonal /
+                            r = Math.floor(Math.random() * (this.rows - word.length + 1));
+                            c = Math.floor(Math.random() * (this.cols - word.length)) + word.length - 1;
+                        }
+                        
+                        // Check if word fits
+                        let fits = true;
+                        for (let i = 0; i < word.length; i++) {
+                            const nr = r + dir.dr * i;
+                            const nc = c + dir.dc * i;
+                            
+                            // Check bounds
+                            if (nr < 0 || nr >= this.rows || nc < 0 || nc >= this.cols) {
+                                fits = false;
+                                break;
+                            }
+                            
+                            if (this.board[nr][nc] !== '' && this.board[nr][nc] !== word[i]) {
+                                fits = false;
+                                break;
+                            }
+                        }
+                        
+                        // Place word if it fits
+                        if (fits) {
+                            const wordPosition = [];
+                            for (let i = 0; i < word.length; i++) {
+                                const nr = r + dir.dr * i;
+                                const nc = c + dir.dc * i;
+                                this.board[nr][nc] = word[i];
+                                wordPosition.push({row: nr, col: nc});
+                            }
+                            this.placedWords.push({
+                                word: word,
+                                positions: wordPosition
+                            });
+                            placed = true;
+                        }
+                    }
+                    
+                    // If word couldn't be placed after max attempts, place it forcefully
+                    if (!placed) {
+                        // Try horizontal placement in first available space
+                        for (let r = 0; r < this.rows && !placed; r++) {
+                            for (let c = 0; c <= this.cols - word.length && !placed; c++) {
+                                let canPlace = true;
+                                for (let i = 0; i < word.length; i++) {
+                                    if (this.board[r][c + i] !== '' && this.board[r][c + i] !== word[i]) {
+                                        canPlace = false;
+                                        break;
+                                    }
+                                }
+                                if (canPlace) {
+                                    const wordPosition = [];
+                                    for (let i = 0; i < word.length; i++) {
+                                        this.board[r][c + i] = word[i];
+                                        wordPosition.push({row: r, col: c + i});
+                                    }
+                                    this.placedWords.push({
+                                        word: word,
+                                        positions: wordPosition
+                                    });
+                                    placed = true;
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            fillEmptyCells() {
+                const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                for (let i = 0; i < this.rows; i++) {
+                    for (let j = 0; j < this.cols; j++) {
+                        if (this.board[i][j] === '') {
+                            this.board[i][j] = letters[Math.floor(Math.random() * letters.length)];
+                        }
+                    }
+                }
+            }
+            
+            renderBoard(container) {
+                container.innerHTML = '';
+                container.style.gridTemplateColumns = `repeat(${this.cols}, 1fr)`;
+                
+                for (let i = 0; i < this.rows; i++) {
+                    for (let j = 0; j < this.cols; j++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'wordsearch-cell';
+                        cell.textContent = this.board[i][j];
+                        cell.dataset.row = i;
+                        cell.dataset.col = j;
+                        
+                        // Mouse events for desktop
+                        cell.addEventListener('mousedown', (e) => {
+                            e.preventDefault();
+                            this.isDragging = true;
+                            this.resetSelection();
+                            this.toggleCellSelection(cell);
+                        });
+                        
+                        cell.addEventListener('mouseenter', () => {
+                            if (this.isDragging) {
+                                this.toggleCellSelection(cell);
+                            }
+                        });
+                        
+                        cell.addEventListener('mouseup', () => {
+                            this.isDragging = false;
+                            this.checkSelectedWord();
+                        });
+                        
+                        // Touch events for mobile
+                        cell.addEventListener('touchstart', (e) => {
+                            e.preventDefault();
+                            this.isDragging = true;
+                            this.resetSelection();
+                            this.toggleCellSelection(cell);
+                        });
+                        
+                        cell.addEventListener('touchmove', (e) => {
+                            if (this.isDragging) {
+                                const touch = e.touches[0];
+                                const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                                if (element && element.classList.contains('wordsearch-cell')) {
+                                    this.toggleCellSelection(element);
+                                }
+                            }
+                        });
+                        
+                        cell.addEventListener('touchend', () => {
+                            this.isDragging = false;
+                            this.checkSelectedWord();
+                        });
+                        
+                        container.appendChild(cell);
+                    }
+                }
+            }
+            
+            toggleCellSelection(cell) {
+                const row = parseInt(cell.dataset.row);
+                const col = parseInt(cell.dataset.col);
+                const index = this.selectedCells.findIndex(c => c.row === row && c.col === col);
+                
+                if (index === -1) {
+                    // Only allow selection if it's in a straight line from the first cell
+                    if (this.selectedCells.length === 0 || this.isInLine(this.selectedCells[0], {row, col})) {
+                        this.selectedCells.push({ row, col });
+                        cell.classList.add('selected');
+                    }
+                } else {
+                    this.selectedCells.splice(index, 1);
+                    cell.classList.remove('selected');
+                }
+            }
+            
+            isInLine(firstCell, newCell) {
+                if (this.selectedCells.length === 0) return true;
+                
+                // Check if the new cell is in line with the first selected cell
+                const dx = newCell.col - firstCell.col;
+                const dy = newCell.row - firstCell.row;
+                
+                // Same row or same column or diagonal
+                return (dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy));
+            }
+            
+            resetSelection() {
+                this.selectedCells.forEach(cell => {
+                    const cellElement = document.querySelector(`.wordsearch-cell[data-row="${cell.row}"][data-col="${cell.col}"]`);
+                    if (cellElement && !cellElement.classList.contains('found')) {
+                        cellElement.classList.remove('selected');
+                    }
+                });
+                this.selectedCells = [];
+            }
+            
+            checkSelectedWord() {
+                if (this.selectedCells.length < 2) return;
+                
+                // Sort selected cells
+                this.selectedCells.sort((a, b) => {
+                    if (a.row !== b.row) return a.row - b.row;
+                    return a.col - b.col;
+                });
+                
+                // Determine direction
+                const first = this.selectedCells[0];
+                const last = this.selectedCells[this.selectedCells.length - 1];
+                
+                let dr = last.row - first.row;
+                let dc = last.col - first.col;
+                
+                // Normalize direction
+                if (dr !== 0) dr = dr / Math.abs(dr);
+                if (dc !== 0) dc = dc / Math.abs(dc);
+                
+                // Check if selection is in a straight line
+                for (let i = 1; i < this.selectedCells.length; i++) {
+                    const prev = this.selectedCells[i-1];
+                    const curr = this.selectedCells[i];
+                    
+                    const expectedRow = prev.row + dr;
+                    const expectedCol = prev.col + dc;
+                    
+                    if (curr.row !== expectedRow || curr.col !== expectedCol) {
+                        this.resetSelection();
+                        return;
+                    }
+                }
+                
+                // Get the word from the selection
+                let word = '';
+                this.selectedCells.forEach(cell => {
+                    word += this.board[cell.row][cell.col];
+                });
+                
+                // Check if word is in the list (both directions)
+                const reversedWord = word.split('').reverse().join('');
+                let foundWord = null;
+                
+                if (this.words.includes(word)) {
+                    foundWord = word;
+                } else if (this.words.includes(reversedWord)) {
+                    foundWord = reversedWord;
+                }
+                
+                if (foundWord && !this.foundWords.includes(foundWord)) {
+                    // Mark as found
+                    this.foundWords.push(foundWord);
+                    
+                    // Update UI
+                    document.querySelectorAll('.wordsearch-word').forEach(wordDiv => {
+                        if (wordDiv.dataset.word === foundWord) {
+                            wordDiv.classList.add('found');
+                        }
+                    });
+                    
+                    // Highlight cells
+                    this.selectedCells.forEach(cell => {
+                        const cellElement = document.querySelector(`.wordsearch-cell[data-row="${cell.row}"][data-col="${cell.col}"]`);
+                        cellElement.classList.remove('selected');
+                        cellElement.classList.add('found');
+                    });
+                    
+                    // Check if all words are found
+                    if (this.foundWords.length === this.words.length) {
+                        setTimeout(() => {
+                            alert('Parabéns! Você encontrou todas as palavras!');
+                        }, 300);
+                    }
+                }
+                
+                this.resetSelection();
+            }
         }
     </script>
 </body>
