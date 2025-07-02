@@ -406,7 +406,7 @@
                     <i class="fas fa-redo"></i> Jogar Novamente
                 </button>
                 <button id="download-pdf-btn" class="btn btn-geodesic-outline">
-                    <i class="fas fa-file-pdf"></i> Baixar PDF
+                    <i class="fas fa-file-pdf"></i> Baixar Resultado
                 </button>
                 <button id="download-questions-pdf-btn" class="btn btn-geodesic-outline">
                     <i class="fas fa-file-alt"></i> Somente Perguntas
@@ -1063,13 +1063,13 @@
         function generateResultsPdf() {
             const doc = new jsPDF();
             
-            // Adiciona suporte a caracteres especiais
+            // Configurar codificação para caracteres especiais
             doc.setFont('helvetica', 'normal');
             
             // Title
             doc.setFontSize(18);
             doc.setTextColor(42, 82, 152);
-            doc.text('Resultados do Quiz Geodésico', 105, 20, { align: 'center' });
+            doc.text('Resultado do Quiz Geodesico', 105, 20, { align: 'center' });
             
             doc.setFontSize(14);
             doc.setTextColor(0, 0, 0);
@@ -1077,10 +1077,12 @@
             
             // Score
             doc.setFontSize(12);
-            doc.text('Pontuação: ' + score + ' de ' + quizData.length, 105, 40, { align: 'center' });
+            const percentage = Math.round((score / quizData.length) * 100);
+            doc.text('Pontuacao Final: ' + score + ' de ' + quizData.length + ' (' + percentage + '%)', 105, 40, { align: 'center' });
             
             // Date
             const today = new Date();
+            doc.setFontSize(10);
             doc.text('Data: ' + today.toLocaleDateString('pt-BR'), 105, 50, { align: 'center' });
             
             // Add line
@@ -1093,7 +1095,7 @@
             
             quizData.forEach((question, index) => {
                 // Check if we need a new page
-                if (yPos > 250) {
+                if (yPos > 240) {
                     doc.addPage();
                     yPos = 20;
                 }
@@ -1103,7 +1105,8 @@
                 doc.setFont('helvetica', 'bold');
                 doc.setTextColor(0, 0, 0);
                 
-                const cleanQuestion = (index + 1) + '. ' + question.question;
+                // Limpar caracteres especiais da pergunta
+                const cleanQuestion = (index + 1) + '. ' + cleanTextForPdf(question.question);
                 const questionLines = doc.splitTextToSize(cleanQuestion, 170);
                 doc.text(questionLines, 20, yPos);
                 yPos += questionLines.length * 6 + 5;
@@ -1114,44 +1117,82 @@
                 const userAnswer = userAnswers[index];
                 const isCorrect = userAnswer === question.answer;
                 
-                doc.setTextColor(isCorrect ? 0 : 200, isCorrect ? 150 : 0);
-                const cleanUserAnswer = 'Sua resposta: ' + question.options[userAnswer];
+                // Mostrar resposta do usuário com cor baseada se está correta ou não
+                doc.setTextColor(isCorrect ? 0 : 200, isCorrect ? 150 : 0, 0);
+                const status = isCorrect ? 'CORRETO' : 'INCORRETO';
+                const cleanUserAnswer = 'Sua resposta: ' + cleanTextForPdf(question.options[userAnswer]) + ' - ' + status;
                 const userAnswerLines = doc.splitTextToSize(cleanUserAnswer, 165);
                 doc.text(userAnswerLines, 25, yPos);
                 yPos += userAnswerLines.length * 5 + 3;
                 
-                // Correct answer if wrong
-                if (!isCorrect) {
-                    doc.setTextColor(0, 150, 0);
-                    const cleanCorrectAnswer = 'Resposta correta: ' + question.options[question.answer];
-                    const correctAnswerLines = doc.splitTextToSize(cleanCorrectAnswer, 165);
-                    doc.text(correctAnswerLines, 25, yPos);
-                    yPos += correctAnswerLines.length * 5 + 3;
-                }
+                // Resposta correta (sempre mostrar para referência)
+                doc.setTextColor(0, 150, 0);
+                const cleanCorrectAnswer = 'Resposta correta: ' + cleanTextForPdf(question.options[question.answer]);
+                const correctAnswerLines = doc.splitTextToSize(cleanCorrectAnswer, 165);
+                doc.text(correctAnswerLines, 25, yPos);
+                yPos += correctAnswerLines.length * 5 + 3;
                 
                 // Explanation
                 doc.setTextColor(60, 60, 60);
-                const cleanExplanation = 'Explicação: ' + question.explanation;
+                const cleanExplanation = 'Explicacao: ' + cleanTextForPdf(question.explanation);
                 const explanationLines = doc.splitTextToSize(cleanExplanation, 165);
                 doc.text(explanationLines, 25, yPos);
-                yPos += explanationLines.length * 5 + 10;
+                yPos += explanationLines.length * 5 + 12;
+                
+                // Add separator line between questions
+                if (index < quizData.length - 1) {
+                    doc.setDrawColor(200, 200, 200);
+                    doc.setLineWidth(0.2);
+                    doc.line(25, yPos - 5, 185, yPos - 5);
+                    yPos += 3;
+                }
             });
             
+            // Summary at the end
+            if (yPos > 220) {
+                doc.addPage();
+                yPos = 20;
+            } else {
+                yPos += 10;
+            }
+            
+            // Final summary box
+            doc.setDrawColor(42, 82, 152);
+            doc.setLineWidth(1);
+            doc.rect(20, yPos, 170, 25);
+            
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(42, 82, 152);
+            doc.text('RESUMO FINAL', 105, yPos + 8, { align: 'center' });
+            
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text('Acertos: ' + score + ' | Erros: ' + (quizData.length - score) + ' | Aproveitamento: ' + percentage + '%', 105, yPos + 15, { align: 'center' });
+            
+            let performanceText = '';
+            if (percentage >= 90) performanceText = 'Excelente desempenho!';
+            else if (percentage >= 70) performanceText = 'Muito bom!';
+            else if (percentage >= 50) performanceText = 'Bom esforco, continue estudando!';
+            else performanceText = 'Revise os conceitos e tente novamente!';
+            
+            doc.text(performanceText, 105, yPos + 21, { align: 'center' });
+            
             // Save the PDF
-            doc.save('Resultados_Geodesia_' + currentQuiz + '.pdf');
+            doc.save('Resultado_Quiz_Geodesia_' + currentQuiz + '_' + today.toLocaleDateString('pt-BR').replace(/\//g, '-') + '.pdf');
         }
 
         // Generate PDF with questions only
         function generateQuestionsOnlyPdf() {
             const doc = new jsPDF();
             
-            // Adiciona suporte a caracteres especiais
+            // Configurar codificação para caracteres especiais
             doc.setFont('helvetica', 'normal');
             
             // Title
             doc.setFontSize(18);
             doc.setTextColor(42, 82, 152);
-            doc.text('Perguntas do Quiz Geodésico', 105, 20, { align: 'center' });
+            doc.text('Perguntas do Quiz Geodesico', 105, 20, { align: 'center' });
             
             doc.setFontSize(14);
             doc.setTextColor(0, 0, 0);
@@ -1182,7 +1223,7 @@
                 doc.setFont('helvetica', 'bold');
                 doc.setTextColor(0, 0, 0);
                 
-                const cleanQuestion = (index + 1) + '. ' + question.question;
+                const cleanQuestion = (index + 1) + '. ' + cleanTextForPdf(question.question);
                 const questionLines = doc.splitTextToSize(cleanQuestion, 170);
                 doc.text(questionLines, 20, yPos);
                 yPos += questionLines.length * 6 + 5;
@@ -1192,7 +1233,7 @@
                 doc.setFontSize(10);
                 question.options.forEach((option, optIndex) => {
                     const letter = String.fromCharCode(97 + optIndex); // a, b, c, d
-                    const cleanOption = letter + ') ' + option;
+                    const cleanOption = letter + ') ' + cleanTextForPdf(option);
                     const optionLines = doc.splitTextToSize(cleanOption, 160);
                     doc.text(optionLines, 25, yPos);
                     yPos += optionLines.length * 5 + 2;
@@ -1214,17 +1255,17 @@
         function generateFullContentPdf() {
             const doc = new jsPDF();
             
-            // Adiciona suporte a caracteres especiais
+            // Configurar codificação para caracteres especiais
             doc.setFont('helvetica', 'normal');
             
             // Title
             doc.setFontSize(18);
             doc.setTextColor(42, 82, 152);
-            doc.text('Material Completo de Geodésia', 105, 20, { align: 'center' });
+            doc.text('Material Completo de Geodesia', 105, 20, { align: 'center' });
             
             doc.setFontSize(12);
             doc.setTextColor(0, 0, 0);
-            doc.text('Baseado nos conteúdos da UFPR', 105, 30, { align: 'center' });
+            doc.text('Baseado nos conteudos da UFPR', 105, 30, { align: 'center' });
             
             // Date
             const today = new Date();
@@ -1240,13 +1281,13 @@
             let yPos = 55;
             doc.setFontSize(10);
             doc.setTextColor(0, 0, 0);
-            doc.text('Este material contém todas as perguntas e respostas dos quizzes sobre:', 20, yPos);
+            doc.text('Este material contem todas as perguntas e respostas dos quizzes sobre:', 20, yPos);
             yPos += 8;
-            doc.text('- Conceitos Básicos de Geodésia', 25, yPos);
+            doc.text('- Conceitos Basicos de Geodesia', 25, yPos);
             yPos += 6;
             doc.text('- Sistemas Cartesianos', 25, yPos);
             yPos += 6;
-            doc.text('- Terra Esférica', 25, yPos);
+            doc.text('- Terra Esferica', 25, yPos);
             yPos += 15;
             
             // Loop through all quizzes
@@ -1280,7 +1321,7 @@
                     
                     // Question
                     doc.setFont('helvetica', 'bold');
-                    const cleanQuestion = (index + 1) + '. ' + question.question;
+                    const cleanQuestion = (index + 1) + '. ' + cleanTextForPdf(question.question);
                     const questionLines = doc.splitTextToSize(cleanQuestion, 170);
                     doc.text(questionLines, 20, yPos);
                     yPos += questionLines.length * 5 + 4;
@@ -1293,7 +1334,7 @@
                         const optionColor = optIndex === question.answer ? [0, 150, 0] : [0, 0, 0];
                         
                         doc.setTextColor(...optionColor);
-                        const cleanOption = letter + ') ' + option + ' ' + marker;
+                        const cleanOption = letter + ') ' + cleanTextForPdf(option) + ' ' + marker;
                         const optionLines = doc.splitTextToSize(cleanOption, 160);
                         doc.text(optionLines, 25, yPos);
                         yPos += optionLines.length * 4 + 2;
@@ -1301,7 +1342,7 @@
                     
                     // Explanation
                     doc.setTextColor(60, 60, 60);
-                    const cleanExplanation = 'Explicação: ' + question.explanation;
+                    const cleanExplanation = 'Explicacao: ' + cleanTextForPdf(question.explanation);
                     const explanationLines = doc.splitTextToSize(cleanExplanation, 165);
                     doc.text(explanationLines, 25, yPos);
                     yPos += explanationLines.length * 4 + 10;
@@ -1319,17 +1360,17 @@
         function generateAllQuestionsOnlyPdf() {
             const doc = new jsPDF();
             
-            // Adiciona suporte a caracteres especiais
+            // Configurar codificação para caracteres especiais
             doc.setFont('helvetica', 'normal');
             
             // Title
             doc.setFontSize(18);
             doc.setTextColor(42, 82, 152);
-            doc.text('Perguntas de Geodésia para Estudo', 105, 20, { align: 'center' });
+            doc.text('Perguntas de Geodesia para Estudo', 105, 20, { align: 'center' });
             
             doc.setFontSize(12);
             doc.setTextColor(0, 0, 0);
-            doc.text('Prática e revisão dos conceitos', 105, 30, { align: 'center' });
+            doc.text('Pratica e revisao dos conceitos', 105, 30, { align: 'center' });
             
             // Date
             const today = new Date();
@@ -1345,13 +1386,13 @@
             let yPos = 55;
             doc.setFontSize(10);
             doc.setTextColor(0, 0, 0);
-            doc.text('Este material contém todas as perguntas dos quizzes para prática:', 20, yPos);
+            doc.text('Este material contem todas as perguntas dos quizzes para pratica:', 20, yPos);
             yPos += 8;
-            doc.text('- Conceitos Básicos de Geodésia', 25, yPos);
+            doc.text('- Conceitos Basicos de Geodesia', 25, yPos);
             yPos += 6;
             doc.text('- Sistemas Cartesianos', 25, yPos);
             yPos += 6;
-            doc.text('- Terra Esférica', 25, yPos);
+            doc.text('- Terra Esferica', 25, yPos);
             yPos += 15;
             
             // Loop through all quizzes
@@ -1385,7 +1426,7 @@
                     
                     // Question
                     doc.setFont('helvetica', 'bold');
-                    const cleanQuestion = (index + 1) + '. ' + question.question;
+                    const cleanQuestion = (index + 1) + '. ' + cleanTextForPdf(question.question);
                     const questionLines = doc.splitTextToSize(cleanQuestion, 170);
                     doc.text(questionLines, 20, yPos);
                     yPos += questionLines.length * 5 + 4;
@@ -1394,7 +1435,7 @@
                     doc.setFont('helvetica', 'normal');
                     question.options.forEach((option, optIndex) => {
                         const letter = String.fromCharCode(97 + optIndex);
-                        const cleanOption = letter + ') ' + option;
+                        const cleanOption = letter + ') ' + cleanTextForPdf(option);
                         const optionLines = doc.splitTextToSize(cleanOption, 160);
                         doc.text(optionLines, 25, yPos);
                         yPos += optionLines.length * 4 + 2;
@@ -1421,13 +1462,13 @@
             const data = wordSearchData[topic];
             const doc = new jsPDF();
             
-            // Adiciona suporte a caracteres especiais
+            // Configurar codificação para caracteres especiais
             doc.setFont('helvetica', 'normal');
             
             // Title
             doc.setFontSize(18);
             doc.setTextColor(42, 82, 152);
-            doc.text('Caça-Palavras Geodésico', 105, 20, { align: 'center' });
+            doc.text('Caca-Palavras Geodesico', 105, 20, { align: 'center' });
             
             doc.setFontSize(14);
             doc.setTextColor(0, 0, 0);
@@ -1502,88 +1543,7 @@
             }
             
             // Save the PDF
-            doc.save('CaçaPalavras_Geodesia_' + topic + '.pdf');
-        }
-
-        // Initialize word search game
-        function initWordSearch(topic) {
-            const data = wordSearchData[topic];
-            wordsearchWordsDiv.innerHTML = '';
-            
-            // Hide result if visible
-            hideWordsearchResult();
-            
-            // Create word list
-            data.words.forEach(word => {
-                const wordDiv = document.createElement('div');
-                wordDiv.className = 'wordsearch-word';
-                wordDiv.textContent = word;
-                wordDiv.dataset.word = word;
-                wordsearchWordsDiv.appendChild(wordDiv);
-            });
-            
-            // Initialize game
-            wordSearchGame = new WordSearchGame(15, 15, data.words);
-            wordSearchGame.renderBoard(wordsearchBoard);
-            
-            // Re-enable interaction for new game
-            document.querySelectorAll('.wordsearch-cell').forEach(cell => {
-                cell.style.pointerEvents = 'auto';
-            });
-        }
-
-        // Show word search result
-        function showWordsearchResult() {
-            const data = wordSearchData[wordsearchTopicSelect.value];
-            const userWordsFound = wordSearchGame.userFoundWords.length; // Only count user-found words
-            const totalWords = data.words.length;
-            const percentage = Math.round((userWordsFound / totalWords) * 100);
-            
-            // Update result content
-            document.getElementById('wordsearch-result-score').innerHTML = 
-                `Palavras encontradas: <span class="fw-bold">${userWordsFound}</span> de <span class="fw-bold">${totalWords}</span>`;
-            
-            let title, message, iconClass, iconName;
-            
-            if (percentage === 100) {
-                title = "Excelente!";
-                message = "Você encontrou todas as palavras antes de ver a resposta!";
-                iconClass = "text-success";
-                iconName = "fas fa-trophy";
-            } else if (percentage >= 75) {
-                title = "Muito Bom!";
-                message = "Você encontrou a maioria das palavras por conta própria!";
-                iconClass = "text-primary";
-                iconName = "fas fa-thumbs-up";
-            } else if (percentage >= 50) {
-                title = "Bom Trabalho!";
-                message = "Você encontrou metade das palavras. Continue praticando!";
-                iconClass = "text-warning";
-                iconName = "fas fa-star";
-            } else if (percentage > 0) {
-                title = "Continue Tentando!";
-                message = "Você encontrou algumas palavras. A prática leva à perfeição!";
-                iconClass = "text-info";
-                iconName = "fas fa-search";
-            } else {
-                title = "Não Desista!";
-                message = "Tente novamente! O caça-palavras requer paciência e atenção.";
-                iconClass = "text-secondary";
-                iconName = "fas fa-redo";
-            }
-            
-            document.getElementById('wordsearch-result-title').textContent = title;
-            document.getElementById('wordsearch-result-message').textContent = message;
-            document.querySelector('#wordsearch-result .result-icon').className = `result-icon ${iconClass}`;
-            document.querySelector('#wordsearch-result .result-icon').innerHTML = `<i class="${iconName}"></i>`;
-            
-            // Show result container
-            document.getElementById('wordsearch-result').style.display = 'block';
-        }
-
-        // Hide word search result
-        function hideWordsearchResult() {
-            document.getElementById('wordsearch-result').style.display = 'none';
+            doc.save('CacaPalavras_Geodesia_' + topic + '.pdf');
         }
 
         // Generate Word Search Result PDF
@@ -1591,13 +1551,13 @@
             const data = wordSearchData[topic];
             const doc = new jsPDF();
             
-            // Adiciona suporte a caracteres especiais
+            // Configurar codificação para caracteres especiais
             doc.setFont('helvetica', 'normal');
             
             // Title
             doc.setFontSize(18);
             doc.setTextColor(42, 82, 152);
-            doc.text('Resultado do Caça-Palavras', 105, 20, { align: 'center' });
+            doc.text('Resultado do Caca-Palavras', 105, 20, { align: 'center' });
             
             doc.setFontSize(14);
             doc.setTextColor(0, 0, 0);
@@ -1614,7 +1574,7 @@
             const percentage = Math.round((userWordsFound / totalWords) * 100);
             
             doc.setFontSize(12);
-            doc.text(`Pontuação: ${userWordsFound}/${totalWords} palavras (${percentage}%)`, 105, 50, { align: 'center' });
+            doc.text(`Pontuacao: ${userWordsFound}/${totalWords} palavras (${percentage}%)`, 105, 50, { align: 'center' });
             
             // Add line
             doc.setDrawColor(42, 82, 152);
@@ -1626,7 +1586,7 @@
             
             doc.setFontSize(11);
             doc.setTextColor(0, 150, 0);
-            doc.text('Palavras Encontradas pelo Usuário:', 20, yPos);
+            doc.text('Palavras Encontradas pelo Usuario:', 20, yPos);
             yPos += 8;
             
             doc.setFontSize(10);
@@ -1641,7 +1601,7 @@
                 yPos += 5;
                 doc.setFontSize(11);
                 doc.setTextColor(100, 100, 100);
-                doc.text('Palavras Reveladas (não pontuaram):', 20, yPos);
+                doc.text('Palavras Reveladas (nao pontuaram):', 20, yPos);
                 yPos += 8;
                 
                 doc.setFontSize(10);
@@ -1657,12 +1617,12 @@
                 yPos += 5;
                 doc.setFontSize(11);
                 doc.setTextColor(200, 0, 0);
-                doc.text('Palavras Não Encontradas:', 20, yPos);
+                doc.text('Palavras Nao Encontradas:', 20, yPos);
                 yPos += 8;
                 
                 doc.setFontSize(10);
                 notFound.forEach(word => {
-                    doc.text('✗ ' + word, 25, yPos);
+                    doc.text('x ' + word, 25, yPos);
                     yPos += 6;
                 });
             }
@@ -1718,449 +1678,69 @@
             }
             
             // Save the PDF
-            doc.save('Resultado_CaçaPalavras_' + topic + '.pdf');
+            doc.save('Resultado_CacaPalavras_' + topic + '.pdf');
         }
 
-        // Word Search Game Class
-        class WordSearchGame {
-            constructor(rows, cols, words) {
-                this.rows = rows;
-                this.cols = cols;
-                this.words = words;
-                this.board = [];
-                this.selectedCells = [];
-                this.foundWords = [];
-                this.userFoundWords = []; // Track words found by user manually
-                this.isDragging = false;
-                this.placedWords = []; // Track where words are placed
-                
-                this.initBoard();
-                this.placeWords();
-                this.fillEmptyCells();
-            }
-            
-            initBoard() {
-                for (let i = 0; i < this.rows; i++) {
-                    this.board[i] = [];
-                    for (let j = 0; j < this.cols; j++) {
-                        this.board[i][j] = '';
-                    }
-                }
-            }
-            
-            placeWords() {
-                const directions = [
-                    { dr: 0, dc: 1 },   // Horizontal
-                    { dr: 1, dc: 0 },   // Vertical
-                    { dr: 1, dc: 1 },   // Diagonal \
-                    { dr: 1, dc: -1 }   // Diagonal /
-                ];
-                
-                this.placedWords = []; // Reset placed words tracking
-                
-                this.words.forEach(word => {
-                    let placed = false;
-                    let attempts = 0;
-                    const maxAttempts = 200; // Increase attempts
-                    
-                    while (!placed && attempts < maxAttempts) {
-                        attempts++;
-                        
-                        // Choose random direction
-                        const dir = directions[Math.floor(Math.random() * directions.length)];
-                        
-                        // Choose random starting position
-                        let r, c;
-                        
-                        if (dir.dc === 1) { // Horizontal
-                            r = Math.floor(Math.random() * this.rows);
-                            c = Math.floor(Math.random() * (this.cols - word.length + 1));
-                        } else if (dir.dr === 1 && dir.dc === 0) { // Vertical
-                            r = Math.floor(Math.random() * (this.rows - word.length + 1));
-                            c = Math.floor(Math.random() * this.cols);
-                        } else if (dir.dr === 1 && dir.dc === 1) { // Diagonal \
-                            r = Math.floor(Math.random() * (this.rows - word.length + 1));
-                            c = Math.floor(Math.random() * (this.cols - word.length + 1));
-                        } else { // Diagonal /
-                            r = Math.floor(Math.random() * (this.rows - word.length + 1));
-                            c = Math.floor(Math.random() * (this.cols - word.length)) + word.length - 1;
-                        }
-                        
-                        // Check if word fits
-                        let fits = true;
-                        for (let i = 0; i < word.length; i++) {
-                            const nr = r + dir.dr * i;
-                            const nc = c + dir.dc * i;
-                            
-                            // Check bounds
-                            if (nr < 0 || nr >= this.rows || nc < 0 || nc >= this.cols) {
-                                fits = false;
-                                break;
-                            }
-                            
-                            if (this.board[nr][nc] !== '' && this.board[nr][nc] !== word[i]) {
-                                fits = false;
-                                break;
-                            }
-                        }
-                        
-                        // Place word if it fits
-                        if (fits) {
-                            const wordPosition = [];
-                            for (let i = 0; i < word.length; i++) {
-                                const nr = r + dir.dr * i;
-                                const nc = c + dir.dc * i;
-                                this.board[nr][nc] = word[i];
-                                wordPosition.push({row: nr, col: nc});
-                            }
-                            this.placedWords.push({
-                                word: word,
-                                positions: wordPosition
-                            });
-                            placed = true;
-                        }
-                    }
-                    
-                    // If word couldn't be placed after max attempts, place it forcefully
-                    if (!placed) {
-                        // Try horizontal placement in first available space
-                        for (let r = 0; r < this.rows && !placed; r++) {
-                            for (let c = 0; c <= this.cols - word.length && !placed; c++) {
-                                let canPlace = true;
-                                for (let i = 0; i < word.length; i++) {
-                                    if (this.board[r][c + i] !== '' && this.board[r][c + i] !== word[i]) {
-                                        canPlace = false;
-                                        break;
-                                    }
-                                }
-                                if (canPlace) {
-                                    const wordPosition = [];
-                                    for (let i = 0; i < word.length; i++) {
-                                        this.board[r][c + i] = word[i];
-                                        wordPosition.push({row: r, col: c + i});
-                                    }
-                                    this.placedWords.push({
-                                        word: word,
-                                        positions: wordPosition
-                                    });
-                                    placed = true;
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-            
-            fillEmptyCells() {
-                const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-                for (let i = 0; i < this.rows; i++) {
-                    for (let j = 0; j < this.cols; j++) {
-                        if (this.board[i][j] === '') {
-                            this.board[i][j] = letters[Math.floor(Math.random() * letters.length)];
-                        }
-                    }
-                }
-            }
-            
-            renderBoard(container) {
-                container.innerHTML = '';
-                container.style.gridTemplateColumns = `repeat(${this.cols}, 1fr)`;
-                
-                for (let i = 0; i < this.rows; i++) {
-                    for (let j = 0; j < this.cols; j++) {
-                        const cell = document.createElement('div');
-                        cell.className = 'wordsearch-cell';
-                        cell.textContent = this.board[i][j];
-                        cell.dataset.row = i;
-                        cell.dataset.col = j;
-                        
-                        // Mouse events for desktop
-                        cell.addEventListener('mousedown', (e) => {
-                            e.preventDefault();
-                            this.isDragging = true;
-                            this.resetSelection();
-                            this.toggleCellSelection(cell);
-                        });
-                        
-                        cell.addEventListener('mouseenter', () => {
-                            if (this.isDragging) {
-                                this.toggleCellSelection(cell);
-                            }
-                        });
-                        
-                        cell.addEventListener('mouseup', () => {
-                            this.isDragging = false;
-                            this.checkSelectedWord();
-                        });
-                        
-                        // Touch events for mobile
-                        cell.addEventListener('touchstart', (e) => {
-                            e.preventDefault();
-                            this.isDragging = true;
-                            this.resetSelection();
-                            this.toggleCellSelection(cell);
-                        });
-                        
-                        cell.addEventListener('touchmove', (e) => {
-                            if (this.isDragging) {
-                                const touch = e.touches[0];
-                                const element = document.elementFromPoint(touch.clientX, touch.clientY);
-                                if (element && element.classList.contains('wordsearch-cell')) {
-                                    this.toggleCellSelection(element);
-                                }
-                            }
-                        });
-                        
-                        cell.addEventListener('touchend', () => {
-                            this.isDragging = false;
-                            this.checkSelectedWord();
-                        });
-                        
-                        container.appendChild(cell);
-                    }
-                }
-            }
-            
-            toggleCellSelection(cell) {
-                const row = parseInt(cell.dataset.row);
-                const col = parseInt(cell.dataset.col);
-                const index = this.selectedCells.findIndex(c => c.row === row && c.col === col);
-                
-                if (index === -1) {
-                    // Only allow selection if it's in a straight line from the first cell
-                    if (this.selectedCells.length === 0 || this.isInLine(this.selectedCells[0], {row, col})) {
-                        this.selectedCells.push({ row, col });
-                        cell.classList.add('selected');
-                    }
-                } else {
-                    this.selectedCells.splice(index, 1);
-                    cell.classList.remove('selected');
-                }
-            }
-            
-            isInLine(firstCell, newCell) {
-                if (this.selectedCells.length === 0) return true;
-                
-                // Check if the new cell is in line with the first selected cell
-                const dx = newCell.col - firstCell.col;
-                const dy = newCell.row - firstCell.row;
-                
-                // Same row or same column or diagonal
-                return (dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy));
-            }
-            
-            resetSelection() {
-                this.selectedCells.forEach(cell => {
-                    const cellElement = document.querySelector(`.wordsearch-cell[data-row="${cell.row}"][data-col="${cell.col}"]`);
-                    if (cellElement && !cellElement.classList.contains('found')) {
-                        cellElement.classList.remove('selected');
-                    }
-                });
-                this.selectedCells = [];
-            }
-            
-            checkSelectedWord() {
-                if (this.selectedCells.length < 2) return;
-                
-                // Sort selected cells
-                this.selectedCells.sort((a, b) => {
-                    if (a.row !== b.row) return a.row - b.row;
-                    return a.col - b.col;
-                });
-                
-                // Determine direction
-                const first = this.selectedCells[0];
-                const last = this.selectedCells[this.selectedCells.length - 1];
-                
-                let dr = last.row - first.row;
-                let dc = last.col - first.col;
-                
-                // Normalize direction
-                if (dr !== 0) dr = dr / Math.abs(dr);
-                if (dc !== 0) dc = dc / Math.abs(dc);
-                
-                // Check if selection is in a straight line
-                for (let i = 1; i < this.selectedCells.length; i++) {
-                    const prev = this.selectedCells[i-1];
-                    const curr = this.selectedCells[i];
-                    
-                    const expectedRow = prev.row + dr;
-                    const expectedCol = prev.col + dc;
-                    
-                    if (curr.row !== expectedRow || curr.col !== expectedCol) {
-                        this.resetSelection();
-                        return;
-                    }
-                }
-                
-                // Get the word from the selection
-                let word = '';
-                this.selectedCells.forEach(cell => {
-                    word += this.board[cell.row][cell.col];
-                });
-                
-                // Check if word is in the list (both directions)
-                const reversedWord = word.split('').reverse().join('');
-                let foundWord = null;
-                
-                if (this.words.includes(word)) {
-                    foundWord = word;
-                } else if (this.words.includes(reversedWord)) {
-                    foundWord = reversedWord;
-                }
-                
-                if (foundWord && !this.foundWords.includes(foundWord)) {
-                    // Mark as found
-                    this.foundWords.push(foundWord);
-                    this.userFoundWords.push(foundWord); // Track as user-found
-                    
-                    // Update UI
-                    document.querySelectorAll('.wordsearch-word').forEach(wordDiv => {
-                        if (wordDiv.dataset.word === foundWord) {
-                            wordDiv.classList.add('user-found'); // Usar classe específica para usuário
-                        }
-                    });
-                    
-                    // Highlight cells with user-found class
-                    this.selectedCells.forEach(cell => {
-                        const cellElement = document.querySelector(`.wordsearch-cell[data-row="${cell.row}"][data-col="${cell.col}"]`);
-                        cellElement.classList.remove('selected');
-                        cellElement.classList.add('user-found'); // Usar classe específica para usuário
-                    });
-                    
-                    // Check if all words are found
-                    if (this.foundWords.length === this.words.length) {
-                        setTimeout(() => {
-                            alert('Parabéns! Você encontrou todas as palavras!');
-                            showWordsearchResult();
-                        }, 300);
-                    }
-                }
-                
-                this.resetSelection();
-            }
-
-            showAllAnswers() {
-                // Mark all remaining words as found (but NOT as user-found)
-                this.words.forEach(word => {
-                    if (!this.foundWords.includes(word)) {
-                        this.foundWords.push(word);
-                        // Note: NOT adding to userFoundWords since these foram reveladas
-                        
-                        // Find and highlight the word in the grid with revealed class
-                        const placedWord = this.placedWords.find(pw => pw.word === word);
-                        if (placedWord) {
-                            placedWord.positions.forEach(pos => {
-                                const cellElement = document.querySelector(`.wordsearch-cell[data-row="${pos.row}"][data-col="${pos.col}"]`);
-                                if (cellElement) {
-                                    cellElement.classList.add('revealed'); // Usar classe específica para reveladas
-                                }
-                            });
-                        }
-                        
-                        // Update word list UI with revealed class
-                        document.querySelectorAll('.wordsearch-word').forEach(wordDiv => {
-                            if (wordDiv.dataset.word === word) {
-                                wordDiv.classList.add('revealed'); // Usar classe específica para reveladas
-                            }
-                        });
-                    }
-                });
-                
-                // Disable further interaction
-                document.querySelectorAll('.wordsearch-cell').forEach(cell => {
-                    cell.style.pointerEvents = 'none';
-                });
-            }
-            
-            resetSelection() {
-                this.selectedCells.forEach(cell => {
-                    const cellElement = document.querySelector(`.wordsearch-cell[data-row="${cell.row}"][data-col="${cell.col}"]`);
-                    if (cellElement && !cellElement.classList.contains('user-found') && !cellElement.classList.contains('revealed')) {
-                        cellElement.classList.remove('selected');
-                    }
-                });
-                this.selectedCells = [];
-            }
-            
-            initBoard() {
-                for (let i = 0; i < this.rows; i++) {
-                    this.board[i] = [];
-                    for (let j = 0; j < this.cols; j++) {
-                        this.board[i][j] = '';
-                    }
-                }
-            }
-            
-            fillEmptyCells() {
-                const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-                for (let i = 0; i < this.rows; i++) {
-                    for (let j = 0; j < this.cols; j++) {
-                        if (this.board[i][j] === '') {
-                            this.board[i][j] = letters[Math.floor(Math.random() * letters.length)];
-                        }
-                    }
-                }
-            }
-            
-            renderBoard(container) {
-                container.innerHTML = '';
-                container.style.gridTemplateColumns = `repeat(${this.cols}, 1fr)`;
-                
-                for (let i = 0; i < this.rows; i++) {
-                    for (let j = 0; j < this.cols; j++) {
-                        const cell = document.createElement('div');
-                        cell.className = 'wordsearch-cell';
-                        cell.textContent = this.board[i][j];
-                        cell.dataset.row = i;
-                        cell.dataset.col = j;
-                        
-                        // Mouse events for desktop
-                        cell.addEventListener('mousedown', (e) => {
-                            e.preventDefault();
-                            this.isDragging = true;
-                            this.resetSelection();
-                            this.toggleCellSelection(cell);
-                        });
-                        
-                        cell.addEventListener('mouseenter', () => {
-                            if (this.isDragging) {
-                                this.toggleCellSelection(cell);
-                            }
-                        });
-                        
-                        cell.addEventListener('mouseup', () => {
-                            this.isDragging = false;
-                            this.checkSelectedWord();
-                        });
-                        
-                        // Touch events for mobile
-                        cell.addEventListener('touchstart', (e) => {
-                            e.preventDefault();
-                            this.isDragging = true;
-                            this.resetSelection();
-                            this.toggleCellSelection(cell);
-                        });
-                        
-                        cell.addEventListener('touchmove', (e) => {
-                            if (this.isDragging) {
-                                const touch = e.touches[0];
-                                const element = document.elementFromPoint(touch.clientX, touch.clientY);
-                                if (element && element.classList.contains('wordsearch-cell')) {
-                                    this.toggleCellSelection(element);
-                                }
-                            }
-                        });
-                        
-                        cell.addEventListener('touchend', () => {
-                            this.isDragging = false;
-                            this.checkSelectedWord();
-                        });
-                        
-                        container.appendChild(cell);
-                    }
-                }
-            }
+        // Função para limpar caracteres especiais para PDF
+        function cleanTextForPdf(text) {
+            return text
+                .replace(/θ/g, 'theta')
+                .replace(/φ/g, 'phi')
+                .replace(/λ/g, 'lambda')
+                .replace(/Δ/g, 'Delta')
+                .replace(/α/g, 'alpha')
+                .replace(/β/g, 'beta')
+                .replace(/γ/g, 'gamma')
+                .replace(/π/g, 'pi')
+                .replace(/√/g, 'raiz')
+                .replace(/²/g, '²')
+                .replace(/³/g, '³')
+                .replace(/₁/g, '1')
+                .replace(/₂/g, '2')
+                .replace(/₃/g, '3')
+                .replace(/ₐ/g, 'A')
+                .replace(/ᵦ/g, 'B')
+                .replace(/ᵤ/g, 'u')
+                .replace(/ₓ/g, 'x')
+                .replace(/ᵧ/g, 'y')
+                .replace(/ᵨ/g, 'z')
+                .replace(/°/g, 'graus')
+                .replace(/'/g, "'")
+                .replace(/"/g, '"')
+                .replace(/–/g, '-')
+                .replace(/—/g, '-')
+                .replace(/'/g, "'")
+                .replace(/"/g, '"')
+                .replace(/"/g, '"')
+                .replace(/…/g, '...')
+                .replace(/×/g, 'x')
+                .replace(/÷/g, '/')
+                .replace(/≥/g, '>=')
+                .replace(/≤/g, '<=')
+                .replace(/≠/g, '!=')
+                .replace(/≈/g, '~')
+                .replace(/∞/g, 'infinito')
+                .replace(/∑/g, 'soma')
+                .replace(/∫/g, 'integral')
+                .replace(/∂/g, 'd')
+                .replace(/∇/g, 'nabla')
+                .replace(/±/g, '+/-')
+                .replace(/μ/g, 'mi')
+                .replace(/σ/g, 'sigma')
+                .replace(/ε/g, 'epsilon')
+                .replace(/δ/g, 'delta')
+                .replace(/ω/g, 'omega')
+                .replace(/Ω/g, 'Omega')
+                .replace(/ρ/g, 'rho')
+                .replace(/τ/g, 'tau')
+                .replace(/ψ/g, 'psi')
+                .replace(/χ/g, 'chi')
+                .replace(/ν/g, 'nu')
+                .replace(/ξ/g, 'xi')
+                .replace(/ζ/g, 'zeta')
+                .replace(/η/g, 'eta')
+                .replace(/κ/g, 'kappa')
+                .replace(/υ/g, 'upsilon');
         }
     </script>
 </body>
