@@ -319,6 +319,30 @@
                 <button id="wordsearch-reset" class="btn btn-geodesic-outline" disabled>
                     <i class="fas fa-redo"></i> Reiniciar
                 </button>
+                <button id="wordsearch-show-answer" class="btn btn-warning" disabled>
+                    <i class="fas fa-eye"></i> Mostrar Resposta
+                </button>
+            </div>
+            
+            <!-- Word Search Result -->
+            <div id="wordsearch-result" class="result-container" style="display: none;">
+                <div class="result-icon text-info">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3 id="wordsearch-result-title">Jogo Finalizado!</h3>
+                <p id="wordsearch-result-message">Você encontrou algumas palavras antes de ver a resposta.</p>
+                <p id="wordsearch-result-score" class="h4 mb-4">Palavras encontradas: <span class="fw-bold">0</span> de <span class="fw-bold">0</span></p>
+                <div class="d-flex justify-content-center gap-3">
+                    <button id="wordsearch-play-again" class="btn btn-geodesic">
+                        <i class="fas fa-play"></i> Jogar Novamente
+                    </button>
+                    <button id="wordsearch-new-theme" class="btn btn-geodesic-outline">
+                        <i class="fas fa-list"></i> Novo Tema
+                    </button>
+                    <button id="wordsearch-download-result" class="btn btn-geodesic-outline">
+                        <i class="fas fa-download"></i> Baixar Resultado
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -698,6 +722,7 @@
         const wordsearchBoard = document.getElementById('wordsearch-board');
         const wordsearchResetBtn = document.getElementById('wordsearch-reset');
         const wordsearchDownloadBtn = document.getElementById('wordsearch-download');
+        const wordsearchShowAnswerBtn = document.getElementById('wordsearch-show-answer');
 
         // Start quiz buttons
         document.querySelectorAll('.start-quiz').forEach(button => {
@@ -720,6 +745,7 @@
             document.getElementById('wordsearch-content').style.display = 'none';
             wordsearchResetBtn.disabled = true;
             wordsearchDownloadBtn.disabled = true;
+            document.getElementById('wordsearch-show-answer').disabled = true;
         });
 
         // Back button from word search
@@ -738,12 +764,14 @@
                 document.getElementById('wordsearch-content').style.display = 'none';
                 wordsearchResetBtn.disabled = true;
                 wordsearchDownloadBtn.disabled = true;
+                document.getElementById('wordsearch-show-answer').disabled = true;
             } else {
                 // Hide placeholder and show game
                 document.getElementById('wordsearch-placeholder').style.display = 'none';
                 document.getElementById('wordsearch-content').style.display = 'block';
                 wordsearchResetBtn.disabled = false;
                 wordsearchDownloadBtn.disabled = false;
+                document.getElementById('wordsearch-show-answer').disabled = false;
                 
                 // Initialize game with selected topic
                 initWordSearch(selectedTopic);
@@ -762,6 +790,38 @@
         wordsearchDownloadBtn.addEventListener('click', function() {
             if (wordsearchTopicSelect.value) {
                 generateWordSearchPdf(wordsearchTopicSelect.value, false);
+            }
+        });
+
+        // Word search show answer button
+        wordsearchShowAnswerBtn.addEventListener('click', function() {
+            if (wordSearchGame) {
+                wordSearchGame.showAllAnswers();
+                showWordsearchResult();
+            }
+        });
+
+        // Word search result buttons
+        document.getElementById('wordsearch-play-again').addEventListener('click', function() {
+            if (wordsearchTopicSelect.value) {
+                hideWordsearchResult();
+                initWordSearch(wordsearchTopicSelect.value);
+            }
+        });
+
+        document.getElementById('wordsearch-new-theme').addEventListener('click', function() {
+            hideWordsearchResult();
+            wordsearchTopicSelect.value = '';
+            document.getElementById('wordsearch-placeholder').style.display = 'block';
+            document.getElementById('wordsearch-content').style.display = 'none';
+            wordsearchResetBtn.disabled = true;
+            document.getElementById('wordsearch-show-answer').disabled = true;
+            wordsearchDownloadBtn.disabled = true;
+        });
+
+        document.getElementById('wordsearch-download-result').addEventListener('click', function() {
+            if (wordsearchTopicSelect.value) {
+                generateWordSearchResultPdf(wordsearchTopicSelect.value);
             }
         });
 
@@ -1414,6 +1474,9 @@
             const data = wordSearchData[topic];
             wordsearchWordsDiv.innerHTML = '';
             
+            // Hide result if visible
+            hideWordsearchResult();
+            
             // Create word list
             data.words.forEach(word => {
                 const wordDiv = document.createElement('div');
@@ -1426,6 +1489,191 @@
             // Initialize game
             wordSearchGame = new WordSearchGame(15, 15, data.words);
             wordSearchGame.renderBoard(wordsearchBoard);
+            
+            // Re-enable interaction for new game
+            document.querySelectorAll('.wordsearch-cell').forEach(cell => {
+                cell.style.pointerEvents = 'auto';
+            });
+        }
+
+        // Show word search result
+        function showWordsearchResult() {
+            const data = wordSearchData[wordsearchTopicSelect.value];
+            const userWordsFound = wordSearchGame.userFoundWords.length; // Only count user-found words
+            const totalWords = data.words.length;
+            const percentage = Math.round((userWordsFound / totalWords) * 100);
+            
+            // Update result content
+            document.getElementById('wordsearch-result-score').innerHTML = 
+                `Palavras encontradas: <span class="fw-bold">${userWordsFound}</span> de <span class="fw-bold">${totalWords}</span>`;
+            
+            let title, message, iconClass, iconName;
+            
+            if (percentage === 100) {
+                title = "Excelente!";
+                message = "Você encontrou todas as palavras antes de ver a resposta!";
+                iconClass = "text-success";
+                iconName = "fas fa-trophy";
+            } else if (percentage >= 75) {
+                title = "Muito Bom!";
+                message = "Você encontrou a maioria das palavras por conta própria!";
+                iconClass = "text-primary";
+                iconName = "fas fa-thumbs-up";
+            } else if (percentage >= 50) {
+                title = "Bom Trabalho!";
+                message = "Você encontrou metade das palavras. Continue praticando!";
+                iconClass = "text-warning";
+                iconName = "fas fa-star";
+            } else if (percentage > 0) {
+                title = "Continue Tentando!";
+                message = "Você encontrou algumas palavras. A prática leva à perfeição!";
+                iconClass = "text-info";
+                iconName = "fas fa-search";
+            } else {
+                title = "Não Desista!";
+                message = "Tente novamente! O caça-palavras requer paciência e atenção.";
+                iconClass = "text-secondary";
+                iconName = "fas fa-redo";
+            }
+            
+            document.getElementById('wordsearch-result-title').textContent = title;
+            document.getElementById('wordsearch-result-message').textContent = message;
+            document.querySelector('#wordsearch-result .result-icon').className = `result-icon ${iconClass}`;
+            document.querySelector('#wordsearch-result .result-icon').innerHTML = `<i class="${iconName}"></i>`;
+            
+            // Show result container
+            document.getElementById('wordsearch-result').style.display = 'block';
+        }
+
+        // Hide word search result
+        function hideWordsearchResult() {
+            document.getElementById('wordsearch-result').style.display = 'none';
+        }
+
+        // Generate Word Search Result PDF
+        function generateWordSearchResultPdf(topic) {
+            const data = wordSearchData[topic];
+            const doc = new jsPDF();
+            
+            // Adiciona suporte a caracteres especiais
+            doc.setFont('helvetica', 'normal');
+            
+            // Title
+            doc.setFontSize(18);
+            doc.setTextColor(42, 82, 152);
+            doc.text('Resultado do Caça-Palavras', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(14);
+            doc.setTextColor(0, 0, 0);
+            doc.text(data.title, 105, 30, { align: 'center' });
+            
+            // Date
+            const today = new Date();
+            doc.setFontSize(10);
+            doc.text('Data: ' + today.toLocaleDateString('pt-BR'), 105, 40, { align: 'center' });
+            
+            // Score - using only user-found words
+            const userWordsFound = wordSearchGame.userFoundWords.length;
+            const totalWords = data.words.length;
+            const percentage = Math.round((userWordsFound / totalWords) * 100);
+            
+            doc.setFontSize(12);
+            doc.text(`Pontuação: ${userWordsFound}/${totalWords} palavras (${percentage}%)`, 105, 50, { align: 'center' });
+            
+            // Add line
+            doc.setDrawColor(42, 82, 152);
+            doc.setLineWidth(0.5);
+            doc.line(20, 55, 190, 55);
+            
+            // Words found vs not found
+            let yPos = 70;
+            
+            doc.setFontSize(11);
+            doc.setTextColor(0, 150, 0);
+            doc.text('Palavras Encontradas pelo Usuário:', 20, yPos);
+            yPos += 8;
+            
+            doc.setFontSize(10);
+            wordSearchGame.userFoundWords.forEach(word => {
+                doc.text('✓ ' + word, 25, yPos);
+                yPos += 6;
+            });
+            
+            // Show words revealed by "Show Answer" if any
+            const revealedWords = wordSearchGame.foundWords.filter(word => !wordSearchGame.userFoundWords.includes(word));
+            if (revealedWords.length > 0) {
+                yPos += 5;
+                doc.setFontSize(11);
+                doc.setTextColor(100, 100, 100);
+                doc.text('Palavras Reveladas (não pontuaram):', 20, yPos);
+                yPos += 8;
+                
+                doc.setFontSize(10);
+                revealedWords.forEach(word => {
+                    doc.text('◦ ' + word, 25, yPos);
+                    yPos += 6;
+                });
+            }
+            
+            // Words not found at all
+            const notFound = data.words.filter(word => !wordSearchGame.foundWords.includes(word));
+            if (notFound.length > 0) {
+                yPos += 5;
+                doc.setFontSize(11);
+                doc.setTextColor(200, 0, 0);
+                doc.text('Palavras Não Encontradas:', 20, yPos);
+                yPos += 8;
+                
+                doc.setFontSize(10);
+                notFound.forEach(word => {
+                    doc.text('✗ ' + word, 25, yPos);
+                    yPos += 6;
+                });
+            }
+            
+            // Word search grid with solutions
+            if (wordSearchGame) {
+                const cellSize = 7;
+                const startY = yPos + 15;
+                const gridWidth = wordSearchGame.cols * cellSize;
+                
+                // Center the grid
+                const centerX = (210 - gridWidth) / 2;
+                
+                doc.setFontSize(9);
+                doc.setTextColor(0, 0, 0);
+                
+                // Draw grid with solutions highlighted
+                for (let i = 0; i < wordSearchGame.rows; i++) {
+                    for (let j = 0; j < wordSearchGame.cols; j++) {
+                        const x = centerX + j * cellSize;
+                        const y = startY + i * cellSize;
+                        
+                        // Check if this cell is part of a solution
+                        const isPartOfSolution = wordSearchGame.placedWords.some(placedWord => 
+                            placedWord.positions.some(pos => pos.row === i && pos.col === j)
+                        );
+                        
+                        // Draw cell border
+                        doc.setDrawColor(150, 150, 150);
+                        if (isPartOfSolution) {
+                            doc.setFillColor(200, 250, 200); // Light green for solution cells
+                            doc.rect(x, y, cellSize, cellSize, 'FD');
+                        } else {
+                            doc.rect(x, y, cellSize, cellSize);
+                        }
+                        
+                        // Add letter
+                        doc.setTextColor(0, 0, 0);
+                        doc.text(wordSearchGame.board[i][j], x + cellSize/2, y + cellSize/2 + 2, {
+                            align: 'center'
+                        });
+                    }
+                }
+            }
+            
+            // Save the PDF
+            doc.save('Resultado_CaçaPalavras_' + topic + '.pdf');
         }
 
         // Word Search Game Class
@@ -1437,6 +1685,7 @@
                 this.board = [];
                 this.selectedCells = [];
                 this.foundWords = [];
+                this.userFoundWords = []; // Track words found by user manually
                 this.isDragging = false;
                 this.placedWords = []; // Track where words are placed
                 
@@ -1718,6 +1967,7 @@
                 if (foundWord && !this.foundWords.includes(foundWord)) {
                     // Mark as found
                     this.foundWords.push(foundWord);
+                    this.userFoundWords.push(foundWord); // Track as user-found
                     
                     // Update UI
                     document.querySelectorAll('.wordsearch-word').forEach(wordDiv => {
@@ -1742,6 +1992,128 @@
                 }
                 
                 this.resetSelection();
+            }
+
+            showAllAnswers() {
+                // Mark all remaining words as found (but NOT as user-found)
+                this.words.forEach(word => {
+                    if (!this.foundWords.includes(word)) {
+                        this.foundWords.push(word);
+                        // Note: NOT adding to userFoundWords since these were revealed
+                        
+                        // Find and highlight the word in the grid
+                        const placedWord = this.placedWords.find(pw => pw.word === word);
+                        if (placedWord) {
+                            placedWord.positions.forEach(pos => {
+                                const cellElement = document.querySelector(`.wordsearch-cell[data-row="${pos.row}"][data-col="${pos.col}"]`);
+                                if (cellElement) {
+                                    cellElement.classList.add('found');
+                                }
+                            });
+                        }
+                        
+                        // Update word list UI
+                        document.querySelectorAll('.wordsearch-word').forEach(wordDiv => {
+                            if (wordDiv.dataset.word === word) {
+                                wordDiv.classList.add('found');
+                            }
+                        });
+                    }
+                });
+                
+                // Disable further interaction
+                document.querySelectorAll('.wordsearch-cell').forEach(cell => {
+                    cell.style.pointerEvents = 'none';
+                });
+            }
+            
+            resetSelection() {
+                this.selectedCells.forEach(cell => {
+                    const cellElement = document.querySelector(`.wordsearch-cell[data-row="${cell.row}"][data-col="${cell.col}"]`);
+                    if (cellElement && !cellElement.classList.contains('found')) {
+                        cellElement.classList.remove('selected');
+                    }
+                });
+                this.selectedCells = [];
+            }
+            
+            initBoard() {
+                for (let i = 0; i < this.rows; i++) {
+                    this.board[i] = [];
+                    for (let j = 0; j < this.cols; j++) {
+                        this.board[i][j] = '';
+                    }
+                }
+            }
+            
+            fillEmptyCells() {
+                const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                for (let i = 0; i < this.rows; i++) {
+                    for (let j = 0; j < this.cols; j++) {
+                        if (this.board[i][j] === '') {
+                            this.board[i][j] = letters[Math.floor(Math.random() * letters.length)];
+                        }
+                    }
+                }
+            }
+            
+            renderBoard(container) {
+                container.innerHTML = '';
+                container.style.gridTemplateColumns = `repeat(${this.cols}, 1fr)`;
+                
+                for (let i = 0; i < this.rows; i++) {
+                    for (let j = 0; j < this.cols; j++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'wordsearch-cell';
+                        cell.textContent = this.board[i][j];
+                        cell.dataset.row = i;
+                        cell.dataset.col = j;
+                        
+                        // Mouse events for desktop
+                        cell.addEventListener('mousedown', (e) => {
+                            e.preventDefault();
+                            this.isDragging = true;
+                            this.resetSelection();
+                            this.toggleCellSelection(cell);
+                        });
+                        
+                        cell.addEventListener('mouseenter', () => {
+                            if (this.isDragging) {
+                                this.toggleCellSelection(cell);
+                            }
+                        });
+                        
+                        cell.addEventListener('mouseup', () => {
+                            this.isDragging = false;
+                            this.checkSelectedWord();
+                        });
+                        
+                        // Touch events for mobile
+                        cell.addEventListener('touchstart', (e) => {
+                            e.preventDefault();
+                            this.isDragging = true;
+                            this.resetSelection();
+                            this.toggleCellSelection(cell);
+                        });
+                        
+                        cell.addEventListener('touchmove', (e) => {
+                            if (this.isDragging) {
+                                const touch = e.touches[0];
+                                const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                                if (element && element.classList.contains('wordsearch-cell')) {
+                                    this.toggleCellSelection(element);
+                                }
+                            }
+                        });
+                        
+                        cell.addEventListener('touchend', () => {
+                            this.isDragging = false;
+                            this.checkSelectedWord();
+                        });
+                        
+                        container.appendChild(cell);
+                    }
+                }
             }
         }
     </script>
