@@ -251,112 +251,64 @@ const wordsearchResetBtn = document.getElementById('wordsearch-reset');
 const wordsearchDownloadBtn = document.getElementById('wordsearch-download');
 const wordsearchShowAnswerBtn = document.getElementById('wordsearch-show-answer');
 
-// Start quiz buttons
-document.querySelectorAll('.start-quiz').forEach(button => {
-    button.addEventListener('click', function() {
-        currentQuiz = this.getAttribute('data-quiz');
-        startQuiz(currentQuiz);
+// Start quiz button (único card agora)
+document.getElementById('start-quiz').addEventListener('click', function() {
+    showQuizThemeSelection();
+});
+
+// Função para mostrar a seleção de temas do quiz
+function showQuizThemeSelection() {
+    // Criar modal para seleção de tema
+    const modalHtml = `
+        <div class="modal fade" id="quizThemeModal" tabindex="-1" aria-labelledby="quizThemeModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="quizThemeModalLabel">Selecione o Tema do Quiz</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-geodesic mb-2 start-quiz-theme" data-quiz="basic">
+                                <i class="fas fa-crosshairs"></i> Conceitos Básicos
+                            </button>
+                            <button class="btn btn-geodesic mb-2 start-quiz-theme" data-quiz="cartesian">
+                                <i class="fas fa-vector-square"></i> Sistemas Cartesianos
+                            </button>
+                            <button class="btn btn-geodesic mb-2 start-quiz-theme" data-quiz="spherical">
+                                <i class="fas fa-globe"></i> Terra Esférica
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Adicionar modal ao DOM
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('quizThemeModal'));
+    modal.show();
+    
+    // Adicionar event listeners aos botões de tema
+    document.querySelectorAll('.start-quiz-theme').forEach(button => {
+        button.addEventListener('click', function() {
+            currentQuiz = this.getAttribute('data-quiz');
+            modal.hide();
+            startQuiz(currentQuiz);
+            
+            // Remover modal do DOM após ocultar
+            document.getElementById('quizThemeModal').addEventListener('hidden.bs.modal', function() {
+                this.remove();
+            });
+        });
     });
-});
-
-// Start word search game
-startWordsearchBtn.addEventListener('click', function() {
-    gameSelection.style.display = 'none';
-    quizContainer.style.display = 'none';
-    resultContainer.style.display = 'none';
-    wordsearchContainer.style.display = 'block';
-    
-    // Reset topic selector and show placeholder
-    wordsearchTopicSelect.value = '';
-    document.getElementById('wordsearch-placeholder').style.display = 'block';
-    document.getElementById('wordsearch-content').style.display = 'none';
-    wordsearchResetBtn.disabled = true;
-    wordsearchDownloadBtn.disabled = true;
-    document.getElementById('wordsearch-show-answer').disabled = true;
-});
-
-// Back button from word search
-wordsearchBackBtn.addEventListener('click', function() {
-    wordsearchContainer.style.display = 'none';
-    gameSelection.style.display = 'flex';
-});
-
-// Back button from quiz
-quizBackBtn.addEventListener('click', function() {
-    quizContainer.style.display = 'none';
-    gameSelection.style.display = 'flex';
-});
-
-// Word search topic change
-wordsearchTopicSelect.addEventListener('change', function() {
-    const selectedTopic = this.value;
-    
-    if (selectedTopic === '') {
-        // Show placeholder if no topic selected
-        document.getElementById('wordsearch-placeholder').style.display = 'block';
-        document.getElementById('wordsearch-content').style.display = 'none';
-        wordsearchResetBtn.disabled = true;
-        wordsearchDownloadBtn.disabled = true;
-        document.getElementById('wordsearch-show-answer').disabled = true;
-    } else {
-        // Hide placeholder and show game
-        document.getElementById('wordsearch-placeholder').style.display = 'none';
-        document.getElementById('wordsearch-content').style.display = 'block';
-        wordsearchResetBtn.disabled = false;
-        wordsearchDownloadBtn.disabled = false;
-        document.getElementById('wordsearch-show-answer').disabled = false;
-        
-        // Initialize game with selected topic
-        initWordSearch(selectedTopic);
-    }
-});
-
-// Word search reset button
-wordsearchResetBtn.addEventListener('click', function() {
-    if (wordSearchGame && wordsearchTopicSelect.value) {
-        wordSearchGame.resetSelection();
-        initWordSearch(wordsearchTopicSelect.value);
-    }
-});
-
-// Word search download button
-wordsearchDownloadBtn.addEventListener('click', function() {
-    if (wordsearchTopicSelect.value) {
-        generateWordSearchPdf(wordsearchTopicSelect.value, false);
-    }
-});
-
-// Word search show answer button
-wordsearchShowAnswerBtn.addEventListener('click', function() {
-    if (wordSearchGame) {
-        wordSearchGame.showAllAnswers();
-        showWordsearchResult();
-    }
-});
-
-// Word search result buttons
-document.getElementById('wordsearch-play-again').addEventListener('click', function() {
-    if (wordsearchTopicSelect.value) {
-        hideWordsearchResult();
-        initWordSearch(wordsearchTopicSelect.value);
-    }
-});
-
-document.getElementById('wordsearch-new-theme').addEventListener('click', function() {
-    hideWordsearchResult();
-    wordsearchTopicSelect.value = '';
-    document.getElementById('wordsearch-placeholder').style.display = 'block';
-    document.getElementById('wordsearch-content').style.display = 'none';
-    wordsearchResetBtn.disabled = true;
-    document.getElementById('wordsearch-show-answer').disabled = true;
-    wordsearchDownloadBtn.disabled = true;
-});
-
-document.getElementById('wordsearch-download-result').addEventListener('click', function() {
-    if (wordsearchTopicSelect.value) {
-        generateWordSearchResultPdf(wordsearchTopicSelect.value);
-    }
-});
+}
 
 // Start a new quiz
 function startQuiz(quizType) {
@@ -1590,83 +1542,109 @@ class WordSearchGame {
         });
         this.selectedCells = [];
     }
-    
-    initBoard() {
-        for (let i = 0; i < this.rows; i++) {
-            this.board[i] = [];
-            for (let j = 0; j < this.cols; j++) {
-                this.board[i][j] = '';
-            }
-        }
-    }
-    
-    fillEmptyCells() {
-        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        for (let i = 0; i < this.rows; i++) {
-            for (let j = 0; j < this.cols; j++) {
-                if (this.board[i][j] === '') {
-                    this.board[i][j] = letters[Math.floor(Math.random() * letters.length)];
-                }
-            }
-        }
-    }
-    
-    renderBoard(container) {
-        container.innerHTML = '';
-        container.style.gridTemplateColumns = `repeat(${this.cols}, 1fr)`;
-        
-        for (let i = 0; i < this.rows; i++) {
-            for (let j = 0; j < this.cols; j++) {
-                const cell = document.createElement('div');
-                cell.className = 'wordsearch-cell';
-                cell.textContent = this.board[i][j];
-                cell.dataset.row = i;
-                cell.dataset.col = j;
-                
-                // Mouse events for desktop
-                cell.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    this.isDragging = true;
-                    this.resetSelection();
-                    this.toggleCellSelection(cell);
-                });
-                
-                cell.addEventListener('mouseenter', () => {
-                    if (this.isDragging) {
-                        this.toggleCellSelection(cell);
-                    }
-                });
-                
-                cell.addEventListener('mouseup', () => {
-                    this.isDragging = false;
-                    this.checkSelectedWord();
-                });
-                
-                // Touch events for mobile
-                cell.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    this.isDragging = true;
-                    this.resetSelection();
-                    this.toggleCellSelection(cell);
-                });
-                
-                cell.addEventListener('touchmove', (e) => {
-                    if (this.isDragging) {
-                        const touch = e.touches[0];
-                        const element = document.elementFromPoint(touch.clientX, touch.clientY);
-                        if (element && element.classList.contains('wordsearch-cell')) {
-                            this.toggleCellSelection(element);
-                        }
-                    }
-                });
-                
-                cell.addEventListener('touchend', () => {
-                    this.isDragging = false;
-                    this.checkSelectedWord();
-                });
-                
-                container.appendChild(cell);
-            }
-        }
-    }
 }
+
+// Start word search game
+startWordsearchBtn.addEventListener('click', function() {
+    gameSelection.style.display = 'none';
+    quizContainer.style.display = 'none';
+    resultContainer.style.display = 'none';
+    wordsearchContainer.style.display = 'block';
+    
+    // Reset topic selector and show placeholder
+    wordsearchTopicSelect.value = '';
+    document.getElementById('wordsearch-placeholder').style.display = 'block';
+    document.getElementById('wordsearch-content').style.display = 'none';
+    wordsearchResetBtn.disabled = true;
+    wordsearchDownloadBtn.disabled = true;
+    document.getElementById('wordsearch-show-answer').disabled = true;
+});
+
+// Back button from word search
+wordsearchBackBtn.addEventListener('click', function() {
+    wordsearchContainer.style.display = 'none';
+    gameSelection.style.display = 'flex';
+});
+
+// Back button from quiz
+quizBackBtn.addEventListener('click', function() {
+    quizContainer.style.display = 'none';
+    gameSelection.style.display = 'flex';
+});
+
+// Word search topic change
+wordsearchTopicSelect.addEventListener('change', function() {
+    const selectedTopic = this.value;
+    
+    if (selectedTopic === '') {
+        // Show placeholder if no topic selected
+        document.getElementById('wordsearch-placeholder').style.display = 'block';
+        document.getElementById('wordsearch-content').style.display = 'none';
+        wordsearchResetBtn.disabled = true;
+        wordsearchDownloadBtn.disabled = true;
+        document.getElementById('wordsearch-show-answer').disabled = true;
+    } else {
+        // Hide placeholder and show game
+        document.getElementById('wordsearch-placeholder').style.display = 'none';
+        document.getElementById('wordsearch-content').style.display = 'block';
+        wordsearchResetBtn.disabled = false;
+        wordsearchDownloadBtn.disabled = false;
+        document.getElementById('wordsearch-show-answer').disabled = false;
+        
+        // Initialize game with selected topic
+        initWordSearch(selectedTopic);
+    }
+});
+
+// Word search reset button
+wordsearchResetBtn.addEventListener('click', function() {
+    if (wordSearchGame && wordsearchTopicSelect.value) {
+        wordSearchGame.resetSelection();
+        initWordSearch(wordsearchTopicSelect.value);
+    }
+});
+
+// Word search download button
+wordsearchDownloadBtn.addEventListener('click', function() {
+    if (wordsearchTopicSelect.value) {
+        generateWordSearchPdf(wordsearchTopicSelect.value, false);
+    }
+});
+
+// Word search show answer button
+wordsearchShowAnswerBtn.addEventListener('click', function() {
+    if (wordSearchGame) {
+        wordSearchGame.showAllAnswers();
+        showWordsearchResult();
+    }
+});
+
+// Word search result buttons
+document.getElementById('wordsearch-play-again').addEventListener('click', function() {
+    if (wordsearchTopicSelect.value) {
+        hideWordsearchResult();
+        initWordSearch(wordsearchTopicSelect.value);
+    }
+});
+
+document.getElementById('wordsearch-new-theme').addEventListener('click', function() {
+    hideWordsearchResult();
+    wordsearchTopicSelect.value = '';
+    document.getElementById('wordsearch-placeholder').style.display = 'block';
+    document.getElementById('wordsearch-content').style.display = 'none';
+    wordsearchResetBtn.disabled = true;
+    document.getElementById('wordsearch-show-answer').disabled = true;
+    wordsearchDownloadBtn.disabled = true;
+});
+
+document.getElementById('wordsearch-download-result').addEventListener('click', function() {
+    if (wordsearchTopicSelect.value) {
+        generateWordSearchResultPdf(wordsearchTopicSelect.value);
+    }
+});
+
+// Hangman event listener
+document.getElementById('start-hangman').addEventListener('click', function() {
+    document.getElementById('hangman-container').style.display = 'block';
+    document.getElementById('game-selection').style.display = 'none';
+});
